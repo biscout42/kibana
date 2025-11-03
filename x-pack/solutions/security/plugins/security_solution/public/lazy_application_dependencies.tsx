@@ -10,7 +10,7 @@
  * By loading these later we can reduce the initial bundle size and allow users to delay loading these dependencies until they are needed.
  */
 
-import renderApp from './app';
+import { renderApp } from './app';
 
 import { createStoreFactory } from './common/store/store';
 export { renderApp, createStoreFactory };

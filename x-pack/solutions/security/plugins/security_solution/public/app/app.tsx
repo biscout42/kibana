@@ -18,8 +18,6 @@ import type { AppMountParameters } from '@kbn/core/public';
 import { EuiThemeProvider } from '@kbn/kibana-react-plugin/common';
 import { CellActionsProvider } from '@kbn/cell-actions';
 import { NavigationProvider } from '@kbn/security-solution-navigation';
-// import { EuiText } from '@elastic/eui';
-import { i18n } from '@kbn/i18n';
 import { UpsellingProvider } from '../common/components/upselling_provider';
 import { ManageUserInfo } from '../detections/components/user_info';
 import { APP_NAME } from '../../common/constants';
@@ -34,10 +32,7 @@ import { UserPrivilegesProvider } from '../common/components/user_privileges/use
 import { ReactQueryClientProvider } from '../common/containers/query_client/query_client_provider';
 import { DiscoverInTimelineContextProvider } from '../common/components/discover_in_timeline/provider';
 import { AssistantProvider } from '../assistant/provider';
-
-const NOTIFICATION_DATA = i18n.translate('xpack.securitySolution.globalHeader.testNotification', {
-  defaultMessage: 'Test Notification',
-});
+import { TrialNotification } from '../trial_notifications/notification';
 
 interface StartAppComponent {
   children: React.ReactNode;
@@ -72,9 +67,7 @@ const StartAppComponent: FC<StartAppComponent> = ({ children, history, store, th
                         <UpsellingProvider upsellingService={upselling}>
                           <DiscoverInTimelineContextProvider>
                             <PageRouter history={history}>
-                              {/*
-                              <EuiText component="p">{NOTIFICATION_DATA}</EuiText>
-*/}
+                              <TrialNotification />
                               <AssistantProvider>{children}</AssistantProvider>
                             </PageRouter>
                           </DiscoverInTimelineContextProvider>
