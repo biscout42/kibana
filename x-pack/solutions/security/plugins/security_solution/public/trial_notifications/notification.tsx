@@ -7,7 +7,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
-import { EuiCallOut } from '@elastic/eui';
+import { EuiButton, EuiCallOut, EuiSpacer } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { useKibana } from '../common/lib/kibana';
 
@@ -22,9 +22,13 @@ export const TrialNotification: React.FC<Props> = () => {
   // TODO: lazy load component
 
   const bannerId = useRef<string | undefined>();
-
   useEffect(
     function handleNotification() {
+      const onSeenBanner = () => {
+        if (bannerId.current) {
+          overlays.banners.remove(bannerId.current);
+        }
+      };
       const mount = toMountPoint(
         <EuiCallOut
           announceOnMount
@@ -37,11 +41,17 @@ export const TrialNotification: React.FC<Props> = () => {
             />
           }
         >
-          {/* example MessageDescriptor.defaultMessage */}
           <FormattedMessage
             id="xpack.securitySolution.trialNotifications.trialNotification.message"
             defaultMessage="Notification message body 2"
           />
+          <EuiSpacer size="s" />
+          <EuiButton size="s" onClick={onSeenBanner}>
+            <FormattedMessage
+              id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
+              defaultMessage="Dismiss"
+            />
+          </EuiButton>
         </EuiCallOut>,
         startServices
       );
