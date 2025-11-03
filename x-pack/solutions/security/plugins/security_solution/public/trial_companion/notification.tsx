@@ -32,8 +32,8 @@ export const TrialNotification: React.FC<Props> = () => {
       const mount = toMountPoint(
         <EuiCallOut
           announceOnMount
-          color="primary"
-          iconType="info"
+          color="success"
+          iconType="cheer"
           title={
             <FormattedMessage
               id="xpack.securitySolution.trialNotifications.trialNotification.title"
@@ -46,7 +46,7 @@ export const TrialNotification: React.FC<Props> = () => {
             defaultMessage="Notification message body 2"
           />
           <EuiSpacer size="s" />
-          <EuiButton size="s" onClick={onSeenBanner}>
+          <EuiButton size="s" onClick={onSeenBanner} color="success">
             <FormattedMessage
               id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
               defaultMessage="Dismiss"

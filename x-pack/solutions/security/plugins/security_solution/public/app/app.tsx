@@ -18,6 +18,7 @@ import type { AppMountParameters } from '@kbn/core/public';
 import { EuiThemeProvider } from '@kbn/kibana-react-plugin/common';
 import { CellActionsProvider } from '@kbn/cell-actions';
 import { NavigationProvider } from '@kbn/security-solution-navigation';
+import { TrialNotification } from '../trial_companion/notification';
 import { UpsellingProvider } from '../common/components/upselling_provider';
 import { ManageUserInfo } from '../detections/components/user_info';
 import { APP_NAME } from '../../common/constants';
@@ -32,7 +33,6 @@ import { UserPrivilegesProvider } from '../common/components/user_privileges/use
 import { ReactQueryClientProvider } from '../common/containers/query_client/query_client_provider';
 import { DiscoverInTimelineContextProvider } from '../common/components/discover_in_timeline/provider';
 import { AssistantProvider } from '../assistant/provider';
-import { TrialNotification } from '../trial_notifications/notification';
 
 interface StartAppComponent {
   children: React.ReactNode;
