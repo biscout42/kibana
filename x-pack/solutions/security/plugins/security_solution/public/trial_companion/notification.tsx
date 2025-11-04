@@ -10,6 +10,7 @@ import { toMountPoint } from '@kbn/react-kibana-mount';
 import { EuiButton, EuiCallOut, EuiSpacer } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { useKibana } from '../common/lib/kibana';
+import { useGetNotification } from './hooks/use_get_notification';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Props {}
@@ -22,8 +23,21 @@ export const TrialNotification: React.FC<Props> = () => {
   // TODO: lazy load component
 
   const bannerId = useRef<string | undefined>();
+
+  const { message, error, loading } = useGetNotification();
+
   useEffect(
     function handleNotification() {
+      if (loading) {
+        window.console.log('loading notification banner...');
+        return;
+      }
+
+      if (error) {
+        window.console.error('error fetching notification message:', error);
+        return;
+      }
+
       const onSeenBanner = () => {
         if (bannerId.current) {
           overlays.banners.remove(bannerId.current);
@@ -43,7 +57,8 @@ export const TrialNotification: React.FC<Props> = () => {
         >
           <FormattedMessage
             id="xpack.securitySolution.trialNotifications.trialNotification.message"
-            defaultMessage="Notification message body 2"
+            defaultMessage="Tada: {message}"
+            values={{ message }}
           />
           <EuiSpacer size="s" />
           <EuiButton size="s" onClick={onSeenBanner} color="success">
@@ -56,14 +71,16 @@ export const TrialNotification: React.FC<Props> = () => {
         startServices
       );
       bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
+      window.console.log('mounted banner with id:', bannerId.current);
       return () => {
         // unmount
+        window.console.log('unmounted banner with id:', bannerId.current);
         if (bannerId.current) {
           overlays.banners.remove(bannerId.current);
         }
       };
     },
-    [overlays, startServices]
+    [overlays, startServices, message, error, loading]
   );
 
   return null;
