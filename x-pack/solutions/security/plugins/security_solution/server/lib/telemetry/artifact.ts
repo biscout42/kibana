@@ -91,6 +91,7 @@ export class Artifact implements IArtifact {
     this.receiver = receiver;
     this.esClusterInfo = await this.receiver.fetchClusterInfo();
     this.cdn = cdn;
+
     if (this.esClusterInfo?.version?.number) {
       const version =
         this.esClusterInfo.version.number.substring(
@@ -180,7 +181,10 @@ export class Artifact implements IArtifact {
     const relativeUrl = manifest.artifacts[name]?.relative_url;
     if (relativeUrl) {
       const url = `${this.cdn?.url}${relativeUrl}`;
-      const artifactResponse = await axios.get(url, { timeout: this.AXIOS_TIMEOUT_MS });
+      const artifactResponse = await axios.get(url, {
+        headers: this.headers(name),
+        timeout: this.AXIOS_TIMEOUT_MS,
+      });
       return artifactResponse.data;
     } else {
       throw Error(`No artifact for name ${name}`);
@@ -190,10 +194,21 @@ export class Artifact implements IArtifact {
   // morre info https://www.rfc-editor.org/rfc/rfc9110#name-etag
   private headers(name: string): Record<string, string> {
     const etag = this.cache.get(name)?.etag;
-    if (etag) {
-      return { 'If-None-Match': etag };
+    const clusterUuid = this.esClusterInfo?.cluster_uuid;
+    let headers = {};
+    if (clusterUuid !== undefined) {
+      headers = {
+        'x-es-cluster-uuid': clusterUuid,
+        ...headers,
+      };
     }
-    return {};
+    if (etag !== undefined) {
+      headers = {
+        'If-None-Match': etag,
+        ...headers,
+      };
+    }
+    return headers;
   }
 
   private isSignatureValid(data: Buffer, signature: Buffer): boolean {
