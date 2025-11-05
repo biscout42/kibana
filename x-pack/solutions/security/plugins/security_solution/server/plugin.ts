@@ -235,10 +235,10 @@ export class Plugin implements ISecuritySolutionPlugin {
     this.trialCompanionService = new TrialCompanionServiceImpl(this.logger);
   }
 
-  public setup(
+  public async setup(
     core: SecuritySolutionPluginCoreSetupDependencies,
     plugins: SecuritySolutionPluginSetupDependencies
-  ): SecuritySolutionPluginSetup {
+  ): Promise<SecuritySolutionPluginSetup> {
     this.logger.debug('plugin setup');
 
     const { appClientFactory, productFeaturesService, pluginContext, config, logger } = this;
@@ -622,7 +622,12 @@ export class Plugin implements ISecuritySolutionPlugin {
     // Register Trial Milestone Detection Task
     if (plugins.taskManager) {
       const trialMilestoneLogger = this.logger.get('trialMilestoneDetection');
-      const trialMilestoneDetectionTask = new TrialMilestoneDetectionTask(trialMilestoneLogger);
+      const trialMilestoneDetectionTask = new TrialMilestoneDetectionTask({
+        logger: trialMilestoneLogger,
+        core: core.getStartServices,
+        endpointAppContextService: this.endpointAppContextService,
+        usageCollection: plugins.usageCollection,
+      });
 
       plugins.taskManager.registerTaskDefinitions({
         [TRIAL_MILESTONE_TASK_TYPE]: {
@@ -634,7 +639,17 @@ export class Plugin implements ISecuritySolutionPlugin {
             return {
               async run() {
                 const { state } = taskInstance;
-                await trialMilestoneDetectionTask.detectMilestone();
+
+                try {
+                  const [step, message] = await trialMilestoneDetectionTask.detectMilestone();
+
+                  trialMilestoneLogger.info(
+                    `Milestone detection result: step - ${step}, message - ${message}`
+                  );
+                } catch (error) {
+                  trialMilestoneLogger.error('Error running milestone detection task', error);
+                }
+
                 return { state };
               },
               async cancel() {
