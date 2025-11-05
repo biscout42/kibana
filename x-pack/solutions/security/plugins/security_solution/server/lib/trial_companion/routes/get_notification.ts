@@ -28,10 +28,11 @@ export const registerGetNotificationRoute = (
     },
     async (context, request, response) => {
       logger.info('Get Trial Companion Notification route called');
+      const shouldShow = Math.random() < 0.7;
       return response.ok({
         body: {
-          message: 'This is a trial companion notification',
-          shouldShow: true,
+          message: `This is a trial companion notification: ${shouldShow}`,
+          shouldShow,
         },
       });
     }

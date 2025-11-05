@@ -23,49 +23,36 @@ export const TrialNotification: React.FC<Props> = () => {
 
   const bannerId = useRef<string | undefined>();
   const [count, setCount] = useState(0);
-  const [seen, setSeen] = useState(false);
 
   const { value, error, loading } = useGetNotification([count]);
+  window.console.log('TrialNotification useGetNotification:', error, loading);
   const message = value?.message;
   const shouldShow = value?.shouldShow;
 
   useInterval(() => {
     setCount((c) => c + 1);
-  }, 5000);
+  }, 10000);
 
   useEffect(() => {
-    window.console.log('running effect on change:', error, loading, message, shouldShow, seen);
-    const onSeenBanner = () => {
+    window.console.log('running effect on change:', message, shouldShow);
+    const removeBanner = () => {
       if (bannerId.current) {
         overlays.banners.remove(bannerId.current);
       }
-      setSeen(true);
+      bannerId.current = undefined;
     };
 
-    if (loading || error || !message || seen) {
-      window.console.log('skip banner:', error, loading);
-      return;
-    }
-
-    if (shouldShow && !seen) {
+    if (message && shouldShow && !bannerId.current) {
       const mount = toMountPoint(
-        <TrialNotificationMessage message={message} onSeenBanner={onSeenBanner} />,
+        <TrialNotificationMessage message={message} onSeenBanner={removeBanner} />,
         startServices
       );
-      window.console.log(
-        'mounted banner with id:',
-        bannerId.current,
-        error,
-        loading,
-        message,
-        shouldShow,
-        bannerId.current
-      );
+      window.console.log('mounted banner with id:', bannerId.current, message, bannerId.current);
       bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
-    } else if (!shouldShow || seen) {
-      onSeenBanner();
+    } else {
+      removeBanner();
     } // else do nothing, keep the banner shown
-  }, [overlays, startServices, message, shouldShow, error, loading, seen]);
+  }, [overlays, startServices, message, shouldShow]);
 
   useEffect(() => {
     return () => {
