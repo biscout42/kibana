@@ -143,5 +143,5 @@ export const initRoutes = (
 
   registerSiemReadinessRoutes({ router, logger });
 
-  registerTrialCompanionRoutes(router, logger, usageCollection);
+  registerTrialCompanionRoutes(router, logger, usageCollection, previewTelemetryReceiver);
 };

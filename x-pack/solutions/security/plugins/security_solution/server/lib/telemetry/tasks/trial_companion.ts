@@ -55,7 +55,10 @@ export function createTelemetryTrialCompanionTaskConfig() {
         log.debug('Updated TrialCompanion Saved Object');
         return 0;
       } catch (error) {
-        log.warn('Failed to download trial companion artifact', { error });
+        log.warn('Failed to download trial companion artifact', {
+          error,
+          error_message: error.message,
+        } as LogMeta);
         telemetryConfiguration.resetAllToDefault();
         return 0;
       }

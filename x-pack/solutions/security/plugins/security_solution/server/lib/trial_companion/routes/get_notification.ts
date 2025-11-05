@@ -194,7 +194,6 @@ export const registerGetNotificationRoute = (
   router.get(
     {
       path: GET_TRIAL_COMPANION_MESSAGE,
-      access: 'internal',
       options: {
         access: 'internal',
       },
@@ -205,7 +204,7 @@ export const registerGetNotificationRoute = (
         },
       },
     },
-    async (context, request, response) => {
+    async (context, _request, response) => {
       const siemResponse = buildSiemResponse(response);
 
       try {
