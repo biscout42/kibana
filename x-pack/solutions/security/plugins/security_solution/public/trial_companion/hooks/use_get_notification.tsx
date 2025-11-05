@@ -6,13 +6,16 @@
  */
 
 import useAsync from 'react-use/lib/useAsync';
+import type { DependencyList } from 'react';
 import { getNotification } from '../api';
 
-export function useGetNotification() {
-  const { value: message, error, loading } = useAsync(() => getNotification(), []);
+export function useGetNotification(deps: DependencyList) {
+  const { value, error, loading } = useAsync(() => {
+    return getNotification();
+  }, deps);
 
   return {
-    message,
+    value,
     error,
     loading,
   };

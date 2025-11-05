@@ -5,12 +5,12 @@
  * 2.0.
  */
 
-import React, { useEffect, useRef } from 'react';
+import useInterval from 'react-use/lib/useInterval';
+import React, { useEffect, useRef, useState } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
-import { EuiButton, EuiCallOut, EuiSpacer } from '@elastic/eui';
-import { FormattedMessage } from '@kbn/i18n-react';
-import { useKibana } from '../common/lib/kibana';
 import { useGetNotification } from './hooks/use_get_notification';
+import { useKibana } from '../common/lib/kibana';
+import { TrialNotificationMessage } from './notification_message';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Props {}
@@ -18,70 +18,61 @@ interface Props {}
 export const TrialNotification: React.FC<Props> = () => {
   const { overlays, ...startServices } = useKibana().services;
 
-  // TODO: call back-end  / useAsync / fetchNotification. Put it to useNotifications
   // TODO: why to use memo for services, see https://github.com/elastic/kibana/commit/6f89bd542bf80e68d128ed6ce09db4ed15855511#diff-2425eabbda427442eccf29ed61395290a09b082ac4cbce092ccdb2cf4ed72946R26-R35
   // TODO: lazy load component
 
   const bannerId = useRef<string | undefined>();
+  const [count, setCount] = useState(0);
+  const [seen, setSeen] = useState(false);
 
-  const { message, error, loading } = useGetNotification();
+  const { value, error, loading } = useGetNotification([count]);
+  const message = value?.message;
+  const shouldShow = value?.shouldShow;
 
-  useEffect(
-    function handleNotification() {
-      if (loading) {
-        window.console.log('loading notification banner...');
-        return;
+  useInterval(() => {
+    setCount((c) => c + 1);
+  }, 5000);
+
+  useEffect(() => {
+    window.console.log('running effect on change:', error, loading, message, shouldShow, seen);
+    const onSeenBanner = () => {
+      if (bannerId.current) {
+        overlays.banners.remove(bannerId.current);
       }
+      setSeen(true);
+    };
 
-      if (error) {
-        window.console.error('error fetching notification message:', error);
-        return;
-      }
+    if (loading || error || !message || seen) {
+      window.console.log('skip banner:', error, loading);
+      return;
+    }
 
-      const onSeenBanner = () => {
-        if (bannerId.current) {
-          overlays.banners.remove(bannerId.current);
-        }
-      };
+    if (shouldShow && !seen) {
       const mount = toMountPoint(
-        <EuiCallOut
-          announceOnMount
-          color="success"
-          iconType="cheer"
-          title={
-            <FormattedMessage
-              id="xpack.securitySolution.trialNotifications.trialNotification.title"
-              defaultMessage="Notification message title 2"
-            />
-          }
-        >
-          <FormattedMessage
-            id="xpack.securitySolution.trialNotifications.trialNotification.message"
-            defaultMessage="Tada: {message}"
-            values={{ message }}
-          />
-          <EuiSpacer size="s" />
-          <EuiButton size="s" onClick={onSeenBanner} color="success">
-            <FormattedMessage
-              id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
-              defaultMessage="Dismiss"
-            />
-          </EuiButton>
-        </EuiCallOut>,
+        <TrialNotificationMessage message={message} onSeenBanner={onSeenBanner} />,
         startServices
       );
+      window.console.log(
+        'mounted banner with id:',
+        bannerId.current,
+        error,
+        loading,
+        message,
+        shouldShow,
+        bannerId.current
+      );
       bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
-      window.console.log('mounted banner with id:', bannerId.current);
-      return () => {
-        // unmount
-        window.console.log('unmounted banner with id:', bannerId.current);
-        if (bannerId.current) {
-          overlays.banners.remove(bannerId.current);
-        }
-      };
-    },
-    [overlays, startServices, message, error, loading]
-  );
+    } else if (!shouldShow || seen) {
+      onSeenBanner();
+    } // else do nothing, keep the banner shown
+  }, [overlays, startServices, message, shouldShow, error, loading, seen]);
 
-  return null;
+  useEffect(() => {
+    return () => {
+      if (bannerId.current) {
+        overlays.banners.remove(bannerId.current);
+      }
+      bannerId.current = undefined;
+    };
+  }, [overlays]);
 };

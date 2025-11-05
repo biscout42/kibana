@@ -31,6 +31,7 @@ export const registerGetNotificationRoute = (
       return response.ok({
         body: {
           message: 'This is a trial companion notification',
+          shouldShow: true,
         },
       });
     }
