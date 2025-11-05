@@ -151,6 +151,41 @@ async function checkMilestone7(
   }
 }
 
+/**
+ * Detects which milestone the user hasn't reached and returns an appropriate message
+ * Returns undefined if all milestones are complete
+ */
+async function detectMilestone(
+  fleet: EndpointInternalFleetServicesInterface,
+  collectorContext: CollectorFetchContext,
+  logger: Logger,
+  usageCollection?: UsageCollectionSetup
+): Promise<string | undefined> {
+  // Check Milestone 3: non-default packages installed
+  const packages = await checkMilestone3(fleet, logger);
+  logger.info(`checkMilestone3: Packages: ${packages.join(', ')}`);
+  if (packages.length === 0) {
+    return 'You never reached milestone 3: Do you need help installing new integrations?';
+  }
+
+  // Check Milestone 6: enabled security rules
+  const rulesCount = await checkMilestone6(collectorContext, logger, usageCollection);
+  logger.info(`checkMilestone6: Rules count: ${rulesCount}`);
+  if (rulesCount === 0) {
+    return 'You never reached milestone 6: Would you like to enable security rules?';
+  }
+
+  // Check Milestone 7: alerts created
+  const alertsCount = await checkMilestone7(collectorContext, logger, usageCollection);
+  logger.info(`checkMilestone7: Alerts count: ${alertsCount}`);
+  if (alertsCount === 0) {
+    return 'You never reached milestone 7: Do you need help creating test alerts?';
+  }
+
+  // All milestones complete
+  return undefined;
+}
+
 export const registerGetNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
@@ -185,18 +220,22 @@ export const registerGetNotificationRoute = (
           soClient: ctx.core.savedObjects.client,
         };
 
-        const packages = await checkMilestone3(fleet, logger);
-        const rulesCount = await checkMilestone6(collectorContext, logger, usageCollection);
-        const alertsCount = await checkMilestone7(collectorContext, logger, usageCollection);
+        const message = await detectMilestone(fleet, collectorContext, logger, usageCollection);
 
-        return response.ok({
-          body: {
-            message: `Milestone 3 PoC: Non-default packages installed: ${packages.join(
-              ', '
-            )}. Milestone 6: Total rules count: ${rulesCount}. Milestone 7: Total alerts count: ${alertsCount}`,
-            shouldShow: true,
-          },
-        });
+        if (message) {
+          return response.ok({
+            body: {
+              message,
+              shouldShow: true,
+            },
+          });
+        } else {
+          return response.ok({
+            body: {
+              shouldShow: false,
+            },
+          });
+        }
       } catch (err) {
         logger.error('Get Trial Companion Notification route: Caught error:', err);
         const error = transformError(err);
