@@ -148,6 +148,12 @@ import { ENTITY_RISK_SCORE_TOOL_ID } from './assistant/tools/entity_risk_score/e
 import type { TelemetryQueryConfiguration } from './lib/telemetry/types';
 import type { TrialCompanionService } from './lib/trial_companion/services/trial_companion_service.types';
 import { TrialCompanionServiceImpl } from './lib/trial_companion/services/trial_companion_service';
+import {
+  TrialMilestoneDetectionTask,
+  TASK_TYPE as TRIAL_MILESTONE_TASK_TYPE,
+  TASK_ID as TRIAL_MILESTONE_TASK_ID,
+  INTERVAL as TRIAL_MILESTONE_TASK_INTERVAL,
+} from './lib/trial_companion/services/trial_milestone_detection_task';
 
 export type { SetupPlugins, StartPlugins, PluginSetup, PluginStart } from './plugin_contract';
 
@@ -613,6 +619,39 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.logger.warn('Task Manager not available, health diagnostic task not registered.');
     }
 
+    // Register Trial Milestone Detection Task
+    if (plugins.taskManager) {
+      const trialMilestoneLogger = this.logger.get('trialMilestoneDetection');
+      const trialMilestoneDetectionTask = new TrialMilestoneDetectionTask(trialMilestoneLogger);
+
+      plugins.taskManager.registerTaskDefinitions({
+        [TRIAL_MILESTONE_TASK_TYPE]: {
+          title: 'Trial Milestones Detection',
+          description: 'This task periodically checks currently achieved milestones.',
+          timeout: '1m',
+          maxAttempts: 1,
+          createTaskRunner: ({ taskInstance }) => {
+            return {
+              async run() {
+                const { state } = taskInstance;
+                await trialMilestoneDetectionTask.detectMilestone();
+                return { state };
+              },
+              async cancel() {
+                trialMilestoneLogger.warn('Task timed out', {
+                  task: TRIAL_MILESTONE_TASK_ID,
+                } as LogMeta);
+              },
+            };
+          },
+        },
+      });
+    } else {
+      this.logger.warn(
+        'Task Manager not available, trial milestone detection task not registered.'
+      );
+    }
+
     return {
       setProductFeaturesConfigurator:
         productFeaturesService.setProductFeaturesConfigurator.bind(productFeaturesService),
@@ -620,10 +659,10 @@ export class Plugin implements ISecuritySolutionPlugin {
     };
   }
 
-  public start(
+  public async start(
     core: SecuritySolutionPluginCoreStartDependencies,
     plugins: SecuritySolutionPluginStartDependencies
-  ): SecuritySolutionPluginStart {
+  ): Promise<SecuritySolutionPluginStart> {
     const { config, logger, productFeaturesService } = this;
 
     this.ruleMonitoringService.start(core, plugins);
@@ -884,6 +923,24 @@ export class Plugin implements ISecuritySolutionPlugin {
       });
     } else {
       this.logger.warn('Task Manager not available, health diagnostic task not started.');
+    }
+
+    if (plugins.taskManager) {
+      const taskManager = plugins.taskManager;
+
+      const taskInstance = await taskManager.ensureScheduled({
+        id: TRIAL_MILESTONE_TASK_ID,
+        taskType: TRIAL_MILESTONE_TASK_TYPE,
+        schedule: { interval: TRIAL_MILESTONE_TASK_INTERVAL },
+        params: {},
+        state: {},
+        scope: ['uptime'],
+      });
+
+      this.logger.info('Trial milestone detection task scheduled', {
+        task: TRIAL_MILESTONE_TASK_ID,
+        interval: taskInstance.schedule?.interval,
+      } as LogMeta);
     }
 
     return {};
