@@ -8,11 +8,15 @@ import type { Logger } from '@kbn/core/server';
 import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
 import type { SecuritySolutionPluginRouter } from '../../types';
 import { registerGetNotificationRoute } from './routes/get_notification';
+import { registerLaunchTaskRoute } from './routes/launch_task';
+import type { ITelemetryReceiver } from '../telemetry/receiver';
 
 export const registerTrialCompanionRoutes = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
-  usageCollection?: UsageCollectionSetup
+  usageCollection?: UsageCollectionSetup,
+  receiver?: ITelemetryReceiver
 ) => {
   registerGetNotificationRoute(router, logger, usageCollection);
+  registerLaunchTaskRoute(router, logger, receiver);
 };

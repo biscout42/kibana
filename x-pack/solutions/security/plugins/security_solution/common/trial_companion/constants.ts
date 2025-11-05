@@ -7,3 +7,5 @@
 
 export const GET_TRIAL_COMPANION_MESSAGE =
   '/internal/security_solution/trial_companion/notification';
+
+export const LAUNCH_TASK = '/internal/security_solution/launch-task';

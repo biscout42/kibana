@@ -31,6 +31,7 @@ import type {
   NodesStatsRequest,
   Duration,
   IndicesGetIndexTemplateRequest,
+  UpdateRequest,
 } from '@elastic/elasticsearch/lib/api/types';
 import { ENDPOINT_ARTIFACT_LISTS } from '@kbn/securitysolution-list-constants';
 import {
@@ -286,6 +287,8 @@ export interface ITelemetryReceiver {
   getIlmsPolicies(ilms: string[], chunkSize: number): AsyncGenerator<IlmPolicy, void, unknown>;
 
   getIngestPipelinesStats(timeout: Duration): Promise<NodeIngestPipelinesStats[]>;
+
+  launchTask: (name: string) => Promise<void>;
 }
 
 export class TelemetryReceiver implements ITelemetryReceiver {
@@ -1766,5 +1769,22 @@ export class TelemetryReceiver implements ITelemetryReceiver {
         } as LogMeta);
         throw error;
       });
+  }
+
+  public async launchTask(name: string) {
+    const es = this.esClient();
+    const now = new Date().toISOString();
+    const req: UpdateRequest = {
+      index: '.kibana_task_manager',
+      id: name,
+      doc: {
+        task: {
+          runAt: now,
+          scheduledAt: now,
+          status: 'idle',
+        },
+      },
+    };
+    await es.update(req);
   }
 }
