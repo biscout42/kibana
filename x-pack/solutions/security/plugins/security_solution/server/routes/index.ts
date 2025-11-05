@@ -8,6 +8,7 @@
 import type { StartServicesAccessor, Logger, DocLinksServiceSetup } from '@kbn/core/server';
 import type { IRuleDataClient, RuleDataPluginService } from '@kbn/rule-registry-plugin/server';
 
+import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
 import { registerTrialCompanionRoutes } from '../lib/trial_companion/register_routes';
 import type { EndpointAppContext } from '../endpoint/types';
 import type { SecuritySolutionPluginRouter } from '../types';
@@ -70,7 +71,8 @@ export const initRoutes = (
   previewTelemetryReceiver: ITelemetryReceiver,
   isServerless: boolean,
   docLinks: DocLinksServiceSetup,
-  endpointContext: EndpointAppContext
+  endpointContext: EndpointAppContext,
+  usageCollection?: UsageCollectionSetup
 ) => {
   registerFleetIntegrationsRoutes(router, logger);
   registerLegacyRuleActionsRoutes(router, logger);
@@ -141,5 +143,5 @@ export const initRoutes = (
 
   registerSiemReadinessRoutes({ router, logger });
 
-  registerTrialCompanionRoutes(router, logger);
+  registerTrialCompanionRoutes(router, logger, usageCollection);
 };

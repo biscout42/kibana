@@ -608,3 +608,8 @@ export interface PrebuiltRuleCustomizations {
   customized_fields: string[];
   num_functional_fields: number;
 }
+
+// TODO: this should be the Saved Object model, move to a better place
+export interface TrialCompanionArtifact {
+  cluster: string;
+}
