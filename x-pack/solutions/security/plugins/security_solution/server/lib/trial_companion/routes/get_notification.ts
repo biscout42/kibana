@@ -6,6 +6,10 @@
  */
 import type { Logger } from '@kbn/core/server';
 import { transformError } from '@kbn/securitysolution-es-utils';
+import type {
+  CollectorFetchContext,
+  UsageCollectionSetup,
+} from '@kbn/usage-collection-plugin/server';
 import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
 import type { SecuritySolutionPluginRouter } from '../../../types';
 import type { EndpointInternalFleetServicesInterface } from '../../../endpoint/services/fleet';
@@ -44,9 +48,52 @@ async function checkMilestone3(
   }
 }
 
+/**
+ * Milestone 7: Total alerts count
+ * Retrieves cached telemetry data from the alerts usage collector
+ * This is the same metric as stack_stats.kibana.plugins.alerts.count_alerts_total
+ */
+async function checkMilestone7(
+  logger: Logger,
+  usageCollection?: UsageCollectionSetup
+): Promise<number> {
+  try {
+    if (!usageCollection) {
+      logger.warn('checkMilestone7: usageCollection is not available');
+      return 0;
+    }
+
+    logger.debug('checkMilestone7: Fetching alerts telemetry from usage collector');
+    const alertsCollector = usageCollection.getCollectorByType('alerts');
+
+    if (!alertsCollector) {
+      logger.warn('checkMilestone7: alerts collector not found');
+      return 0;
+    }
+
+    // Fetch the telemetry data from the collector
+    const alertsCountResult = await alertsCollector.fetch(
+      undefined as unknown as CollectorFetchContext
+    );
+
+    logger.debug(`checkMilestone7: Alerts telemetry result: ${JSON.stringify(alertsCountResult)}`);
+
+    // Extract count_alerts_total from the result
+    const totalAlertsCount =
+      (alertsCountResult as { count_alerts_total?: number })?.count_alerts_total ?? 0;
+
+    logger.debug(`checkMilestone7: Total alerts count: ${totalAlertsCount}`);
+    return totalAlertsCount;
+  } catch (error) {
+    logger.error('checkMilestone7: Error fetching alerts telemetry', error);
+    return 0;
+  }
+}
+
 export const registerGetNotificationRoute = (
   router: SecuritySolutionPluginRouter,
-  logger: Logger
+  logger: Logger,
+  usageCollection?: UsageCollectionSetup
 ) => {
   router.get(
     {
@@ -72,10 +119,13 @@ export const registerGetNotificationRoute = (
         const fleet = ctx.securitySolution.getInternalFleetServices();
 
         const packages = await checkMilestone3(fleet, logger);
+        const alertsCount = await checkMilestone7(logger, usageCollection);
 
         return response.ok({
           body: {
-            message: `Milestone 3 PoC: Non-default packages installed: ${packages.join(', ')}`,
+            message: `Milestone 3 PoC: Non-default packages installed: ${packages.join(
+              ', '
+            )}. Milestone 7: Total alerts count: ${alertsCount}`,
             shouldShow: true,
           },
         });

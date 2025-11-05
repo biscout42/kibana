@@ -5,12 +5,14 @@
  * 2.0.
  */
 import type { Logger } from '@kbn/core/server';
+import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
 import type { SecuritySolutionPluginRouter } from '../../types';
 import { registerGetNotificationRoute } from './routes/get_notification';
 
 export const registerTrialCompanionRoutes = (
   router: SecuritySolutionPluginRouter,
-  logger: Logger
+  logger: Logger,
+  usageCollection?: UsageCollectionSetup
 ) => {
-  registerGetNotificationRoute(router, logger);
+  registerGetNotificationRoute(router, logger, usageCollection);
 };
