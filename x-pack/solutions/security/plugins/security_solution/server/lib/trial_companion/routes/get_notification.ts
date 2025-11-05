@@ -48,12 +48,71 @@ async function checkMilestone3(
   }
 }
 
+async function checkMilestone6(
+  collectorContext: CollectorFetchContext,
+  logger: Logger,
+  usageCollection?: UsageCollectionSetup
+): Promise<number> {
+  try {
+    if (!usageCollection) {
+      logger.warn('checkMilestone6: usageCollection is not available');
+      return 0;
+    }
+
+    logger.info('checkMilestone6: Fetching rules telemetry from usage collector');
+    const securitySolutionCollector = usageCollection.getCollectorByType('security_solution');
+
+    if (!securitySolutionCollector) {
+      logger.warn('checkMilestone6: security_solution collector not found');
+      return 0;
+    }
+
+    // Fetch the telemetry data from the collector with proper context
+    const securitySolutionResult = await securitySolutionCollector.fetch(collectorContext);
+
+    logger.info(
+      `checkMilestone6: Security solution telemetry result keys: ${Object.keys(
+        securitySolutionResult || {}
+      ).join(', ')}`
+    );
+
+    // Extract enabled rules count from detection_rules usage
+    interface SecuritySolutionTelemetry {
+      detectionMetrics?: {
+        detection_rules?: {
+          detection_rule_usage?: {
+            custom_total?: { enabled?: number };
+            elastic_total?: { enabled?: number };
+          };
+        };
+      };
+    }
+    const detectionMetrics = (securitySolutionResult as SecuritySolutionTelemetry)
+      ?.detectionMetrics;
+    const detectionRules = detectionMetrics?.detection_rules;
+    const ruleUsage = detectionRules?.detection_rule_usage;
+
+    const customEnabled = ruleUsage?.custom_total?.enabled ?? 0;
+    const elasticEnabled = ruleUsage?.elastic_total?.enabled ?? 0;
+    const rulesCount = customEnabled + elasticEnabled;
+
+    logger.debug(
+      `checkMilestone6: Rules count - custom: ${customEnabled}, elastic: ${elasticEnabled}, total: ${rulesCount}`
+    );
+    return rulesCount;
+  } catch (error) {
+    logger.error(`checkMilestone6: Error fetching security solution telemetry: ${error}`);
+    return 0;
+  }
+}
+
 /**
  * Milestone 7: Total alerts count
  * Retrieves cached telemetry data from the alerts usage collector
  * This is the same metric as stack_stats.kibana.plugins.alerts.count_alerts_total
  */
 async function checkMilestone7(
+  collectorContext: CollectorFetchContext,
   logger: Logger,
   usageCollection?: UsageCollectionSetup
 ): Promise<number> {
@@ -71,12 +130,14 @@ async function checkMilestone7(
       return 0;
     }
 
-    // Fetch the telemetry data from the collector
-    const alertsCountResult = await alertsCollector.fetch(
-      undefined as unknown as CollectorFetchContext
-    );
+    // Fetch the telemetry data from the collector with proper context
+    const alertsCountResult = await alertsCollector.fetch(collectorContext);
 
-    logger.debug(`checkMilestone7: Alerts telemetry result: ${JSON.stringify(alertsCountResult)}`);
+    logger.debug(
+      `checkMilestone7: Alerts telemetry result keys: ${Object.keys(alertsCountResult || {}).join(
+        ', '
+      )}`
+    );
 
     // Extract count_alerts_total from the result
     const totalAlertsCount =
@@ -118,14 +179,21 @@ export const registerGetNotificationRoute = (
         const ctx = await context.resolve(['core', 'securitySolution']);
         const fleet = ctx.securitySolution.getInternalFleetServices();
 
+        // Build CollectorFetchContext for usage collectors
+        const collectorContext: CollectorFetchContext = {
+          esClient: ctx.core.elasticsearch.client.asInternalUser,
+          soClient: ctx.core.savedObjects.client,
+        };
+
         const packages = await checkMilestone3(fleet, logger);
-        const alertsCount = await checkMilestone7(logger, usageCollection);
+        const rulesCount = await checkMilestone6(collectorContext, logger, usageCollection);
+        const alertsCount = await checkMilestone7(collectorContext, logger, usageCollection);
 
         return response.ok({
           body: {
             message: `Milestone 3 PoC: Non-default packages installed: ${packages.join(
               ', '
-            )}. Milestone 7: Total alerts count: ${alertsCount}`,
+            )}. Milestone 6: Total rules count: ${rulesCount}. Milestone 7: Total alerts count: ${alertsCount}`,
             shouldShow: true,
           },
         });
