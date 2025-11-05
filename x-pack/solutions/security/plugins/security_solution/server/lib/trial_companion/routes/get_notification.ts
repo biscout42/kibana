@@ -211,13 +211,14 @@ export const registerGetNotificationRoute = (
       try {
         logger.info('Get Trial Companion Notification route called');
 
-        const ctx = await context.resolve(['core', 'securitySolution']);
-        const fleet = ctx.securitySolution.getInternalFleetServices();
+        const core = await context.core;
+        const securitySolution = await context.securitySolution;
+        const fleet = securitySolution.getInternalFleetServices();
 
         // Build CollectorFetchContext for usage collectors
         const collectorContext: CollectorFetchContext = {
-          esClient: ctx.core.elasticsearch.client.asInternalUser,
-          soClient: ctx.core.savedObjects.client,
+          esClient: core.elasticsearch.client.asInternalUser,
+          soClient: core.savedObjects.client,
         };
 
         const message = await detectMilestone(fleet, collectorContext, logger, usageCollection);
