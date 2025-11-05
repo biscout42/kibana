@@ -12,6 +12,7 @@ import type { EncryptedSavedObjectsPluginSetup } from '@kbn/encrypted-saved-obje
 import { referenceDataSavedObjectType } from './endpoint/lib/reference_data';
 import { protectionUpdatesNoteType } from './endpoint/lib/protection_updates_note/saved_object_mappings';
 import { noteType, pinnedEventType, timelineType } from './lib/timeline/saved_object_mappings';
+import { telemetryType } from './lib/trial_companion/saved_object_mappings';
 // eslint-disable-next-line no-restricted-imports
 import { legacyType as legacyRuleActionsType } from './lib/detection_engine/rule_actions_legacy';
 import { prebuiltRuleAssetType } from './lib/detection_engine/prebuilt_rules';
@@ -45,6 +46,7 @@ const types = [
   protectionUpdatesNoteType,
   promptType,
   referenceDataSavedObjectType,
+  telemetryType,
 ];
 
 export const savedObjectTypes = types.map((type) => type.name);

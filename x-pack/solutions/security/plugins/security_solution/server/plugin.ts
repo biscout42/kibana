@@ -146,6 +146,8 @@ import { HealthDiagnosticServiceImpl } from './lib/telemetry/diagnostic/health_d
 import type { HealthDiagnosticService } from './lib/telemetry/diagnostic/health_diagnostic_service.types';
 import { ENTITY_RISK_SCORE_TOOL_ID } from './assistant/tools/entity_risk_score/entity_risk_score';
 import type { TelemetryQueryConfiguration } from './lib/telemetry/types';
+import type { TrialCompanionService } from './lib/trial_companion/services/trial_companion_service.types';
+import { TrialCompanionServiceImpl } from './lib/trial_companion/services/trial_companion_service';
 
 export type { SetupPlugins, StartPlugins, PluginSetup, PluginStart } from './plugin_contract';
 
@@ -164,6 +166,7 @@ export class Plugin implements ISecuritySolutionPlugin {
   private readonly asyncTelemetryEventsSender: IAsyncTelemetryEventsSender;
 
   private readonly healthDiagnosticService: HealthDiagnosticService;
+  private readonly trialCompanionService: TrialCompanionService;
 
   private lists: ListPluginSetup | undefined; // TODO: can we create ListPluginStart?
   private licensing$!: Observable<ILicense>;
@@ -223,6 +226,7 @@ export class Plugin implements ISecuritySolutionPlugin {
     this.logger.debug('plugin initialized');
 
     this.healthDiagnosticService = new HealthDiagnosticServiceImpl(this.logger);
+    this.trialCompanionService = new TrialCompanionServiceImpl(this.logger);
   }
 
   public setup(
@@ -453,7 +457,8 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.isServerless,
       core.docLinks,
       this.endpointContext,
-      plugins.usageCollection
+      plugins.usageCollection,
+      this.trialCompanionService
     );
 
     registerEndpointRoutes(router, this.endpointContext);
@@ -598,6 +603,10 @@ export class Plugin implements ISecuritySolutionPlugin {
 
     if (plugins.taskManager) {
       this.healthDiagnosticService.setup({
+        taskManager: plugins.taskManager,
+      });
+
+      this.trialCompanionService.setup({
         taskManager: plugins.taskManager,
       });
     } else {
@@ -867,6 +876,11 @@ export class Plugin implements ISecuritySolutionPlugin {
         this.logger.warn('Error starting health diagnostic task', {
           error: e.message,
         } as LogMeta);
+      });
+
+      this.trialCompanionService.start({
+        taskManager: plugins.taskManager,
+        core,
       });
     } else {
       this.logger.warn('Task Manager not available, health diagnostic task not started.');

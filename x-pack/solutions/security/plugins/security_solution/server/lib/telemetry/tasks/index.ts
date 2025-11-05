@@ -19,7 +19,6 @@ import { createTelemetryIndicesMetadataTaskConfig } from './indices.metadata';
 import { createTelemetryPrebuiltRuleAlertsTaskConfig } from './prebuilt_rule_alerts';
 import { createTelemetrySecurityListTaskConfig } from './security_lists';
 import { createTelemetryTimelineTaskConfig } from './timelines';
-import { createTelemetryTrialCompanionTaskConfig } from './trial_companion';
 import { telemetryConfiguration } from '../configuration';
 
 export function createTelemetryTaskConfigs(
@@ -27,7 +26,6 @@ export function createTelemetryTaskConfigs(
 ): SecurityTelemetryTaskConfig[] {
   const tasks = [
     createTelemetryDiagnosticsTaskConfig(),
-    createTelemetryTrialCompanionTaskConfig(),
     createTelemetryEndpointTaskConfig(telemetryConfiguration.max_security_list_telemetry_batch),
     createTelemetrySecurityListTaskConfig(telemetryConfiguration.max_endpoint_telemetry_batch),
     createTelemetryDetectionRuleListsTaskConfig(
