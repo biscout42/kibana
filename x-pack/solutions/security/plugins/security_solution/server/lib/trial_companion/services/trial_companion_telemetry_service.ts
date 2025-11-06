@@ -28,7 +28,7 @@ import { newTelemetryLogger } from '../../telemetry/helpers';
 import { telemetrySavedObjectType } from '../saved_objects';
 import { artifactService } from '../../telemetry/artifact';
 
-const TASK_TYPE = 'security:telemetry-trial-companion';
+const TASK_TYPE = 'security:trial-companion-telemetry';
 const TASK_ID = `${TASK_TYPE}:1.0.0`;
 const INTERVAL = '1h';
 const TIMEOUT = '10m';
