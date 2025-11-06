@@ -6,18 +6,19 @@
  */
 import type { Logger } from '@kbn/core/server';
 import { transformError } from '@kbn/securitysolution-es-utils';
+import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
+import { TrialCompanionUserNotificationServiceImpl } from '../services/trial_companion_user_notification_service';
 import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
 import type { SecuritySolutionPluginRouter } from '../../../types';
-import { buildSiemResponse } from '../../detection_engine/routes/utils';
-import type { TrialMilestoneDetectionTaskDeps } from '../services/trial_milestone_detection_task';
-import { TrialMilestoneDetectionTask } from '../services/trial_milestone_detection_task';
-import type { EndpointAppContextService } from '../../../endpoint/endpoint_app_context_services';
-import type { TrialCompanionMilestoneRegistryService } from '../types';
+import type {
+  TrialCompanionMilestoneRegistryService,
+  TrialCompanionUserNotificationService,
+} from '../types';
 
 export const registerGetNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
-  TrialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
+  trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
 ) => {
   router.get(
     {
@@ -34,51 +35,36 @@ export const registerGetNotificationRoute = (
     },
     async (context, _request, response) => {
       const siemResponse = buildSiemResponse(response);
-
       try {
         logger.info('Get Trial Companion Notification route called');
 
-        // deps.core is not a function
         const core = await context.core;
+        const soClient = core.savedObjects.client;
+        const service: TrialCompanionUserNotificationService =
+          new TrialCompanionUserNotificationServiceImpl(
+            logger,
+            trialCompanionMilestoneRegistryService,
+            soClient
+          );
+
         const currentUser = await core.userProfile.getCurrent();
+        const user = currentUser?.user;
+        logger.info(`User data. Username: ${user?.username}, uid: ${currentUser?.uid}`);
 
-        logger.info(`User data. Username: ${currentUser?.user.username}, uid: ${currentUser?.uid}`);
-
-        const securitySolution = await context.securitySolution;
-        const fleet: EndpointAppContextService = securitySolution.getInternalFleetServices();
-        const soClient = core.savedObjects.getClient();
-
-        // soClient.get()
-
-        const collectorContext = {
-          esClient: core.elasticsearch.client.asInternalUser,
-          soClient: core.savedObjects.client,
-        };
-
-        // Create task instance with dependencies and use its detectMilestone method
-        const task = new TrialMilestoneDetectionTask({
-          logger,
-          fleet,
-          usageCollection,
-          core: collectorContext,
-        } as TrialMilestoneDetectionTaskDeps);
-
-        const message = await task.detectMilestone();
-
-        if (message) {
-          return response.ok({
-            body: {
-              message,
-              shouldShow: true,
-            },
-          });
-        } else {
-          return response.ok({
-            body: {
-              shouldShow: false,
-            },
+        if (!user) {
+          return response.notFound({
+            body: 'User not found',
           });
         }
+
+        const milestone = await service.currentMilestone(user.username);
+
+        return response.ok({
+          body: {
+            message: milestone.milestone?.message,
+            shouldShow: milestone.shouldShow,
+          },
+        });
       } catch (err) {
         logger.error(`Get Trial Companion Notification route: Caught error: ${err}`);
         const error = transformError(err);
