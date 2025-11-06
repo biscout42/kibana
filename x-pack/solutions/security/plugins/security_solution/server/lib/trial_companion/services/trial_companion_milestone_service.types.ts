@@ -11,10 +11,12 @@ import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
 } from '@kbn/task-manager-plugin/server';
+import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
 import type { TrialCompanionMilestoneRegistryService } from '../types';
 
 export interface TrialCompanionMilestoneServiceSetup {
   taskManager: TaskManagerSetupContract;
+  usageCollection: UsageCollectionSetup;
 }
 
 export interface TrialCompanionMilestoneServiceStart {

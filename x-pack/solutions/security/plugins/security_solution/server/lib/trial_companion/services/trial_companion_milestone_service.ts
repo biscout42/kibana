@@ -5,12 +5,7 @@
  * 2.0.
  */
 
-import type {
-  CoreStart,
-  ElasticsearchClient,
-  Logger,
-  SavedObjectsClientContract,
-} from '@kbn/core/server';
+import type { ElasticsearchClient, Logger, SavedObjectsClientContract } from '@kbn/core/server';
 import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
@@ -77,14 +72,15 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
 
   public setup(setup: TrialCompanionMilestoneServiceSetup) {
     this.logger.debug('Setting up health diagnostic service');
-
+    this.usageCollection = setup.usageCollection;
     this.registerTask(setup.taskManager);
   }
 
-  public async start(start: TrialCompanionMilestoneServiceStart, core?: CoreStart) {
+  public async start(start: TrialCompanionMilestoneServiceStart) {
     this.logger.debug('Starting health diagnostic service');
 
-    this._esClient = core?.elasticsearch.client.asInternalUser;
+    this._esClient = start.core.elasticsearch.client.asInternalUser;
+    this.logger.info(`Starting *** health diagnostic _esClient: ${this._esClient}`);
     this._soClient =
       start.core.savedObjects.createInternalRepository() as unknown as SavedObjectsClientContract;
     this.packageService = start.packageService;
@@ -307,6 +303,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
               } else {
                 saved.id = current[0];
                 saved.message = current[1];
+                // TODO: update only if changed
                 const result = await this.trialCompanionMilestoneRegistryService.save(saved);
                 this.logger.info(`Updated existing milestone : ${result}`);
               }

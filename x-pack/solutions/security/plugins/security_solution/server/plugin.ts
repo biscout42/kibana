@@ -622,6 +622,7 @@ export class Plugin implements ISecuritySolutionPlugin {
       });
 
       this.trialCompanionMilestoneService.setup({
+        usageCollection: plugins.usageCollection,
         taskManager: plugins.taskManager,
       });
     } else {
@@ -905,6 +906,7 @@ export class Plugin implements ISecuritySolutionPlugin {
         });
 
       this.trialCompanionMilestoneRegistryService.start(core.savedObjects);
+
       this.trialCompanionMilestoneService
         .start({
           taskManager: plugins.taskManager,
@@ -913,7 +915,7 @@ export class Plugin implements ISecuritySolutionPlugin {
           registry: this.trialCompanionMilestoneRegistryService,
         })
         .catch((e) => {
-          this.logger.warn('Error starting trial companion milestone service task', {
+          this.logger.warn(`Error starting trial companion milestone service task: ${e}`, {
             error: e.message,
           } as LogMeta);
         });
