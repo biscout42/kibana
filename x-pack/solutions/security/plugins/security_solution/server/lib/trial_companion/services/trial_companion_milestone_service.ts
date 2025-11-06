@@ -5,17 +5,27 @@
  * 2.0.
  */
 
-import type { Logger } from '@kbn/core/server';
+import type {
+  CoreStart,
+  ElasticsearchClient,
+  Logger,
+  SavedObjectsClientContract,
+} from '@kbn/core/server';
 import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
 } from '@kbn/task-manager-plugin/server';
-import { newTelemetryLogger } from '../../telemetry/helpers';
-import type { TrialCompanionMilestoneService } from './trial_companion_milestone_service.types';
 import type {
-  TrialCompanionServiceSetup,
-  TrialCompanionServiceStart,
-} from './trial_companion_service.types';
+  CollectorFetchContext,
+  UsageCollectionSetup,
+} from '@kbn/usage-collection-plugin/server';
+import type { PackageService } from '@kbn/fleet-plugin/server';
+import type {
+  TrialCompanionMilestoneService,
+  TrialCompanionMilestoneServiceSetup,
+  TrialCompanionMilestoneServiceStart,
+} from './trial_companion_milestone_service.types';
+import { newTelemetryLogger } from '../../telemetry/helpers';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
@@ -23,28 +33,249 @@ const TASK_ID = `${TASK_TYPE}:1.0.0`;
 const INTERVAL = '1m'; // testing purposes
 const TIMEOUT = '10m';
 
+/**
+ * Milestone step numbers and their corresponding messages
+ * These map to the milestone numbers in the Security Portal dashboard
+ */
+const MILESTONE_STEPS = {
+  ALL_MILESTONES_COMPLETE: {
+    step: -1,
+    message: 'All milestones complete',
+  },
+  INSTALL_INTEGRATIONS: {
+    step: 3,
+    message: 'Do you need help installing new integrations?',
+  },
+  ENABLE_SECURITY_RULES: {
+    step: 6,
+    message: 'Would you like to enable security rules?',
+  },
+  CREATE_ALERTS: {
+    step: 7,
+    message: 'Do you need help creating test alerts?',
+  },
+} as const;
+
 export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilestoneService {
   private readonly logger: Logger;
+
+  private packageService?: PackageService;
+
+  private usageCollection?: UsageCollectionSetup;
+
+  private _soClient?: SavedObjectsClientContract;
+
+  private _esClient?: ElasticsearchClient;
 
   constructor(logger: Logger) {
     const mdc = { task_id: TASK_ID, task_type: TASK_TYPE };
     this.logger = newTelemetryLogger(logger.get('trial-companion-milestone-service'), mdc);
   }
 
-  public setup(setup: TrialCompanionServiceSetup) {
+  public setup(setup: TrialCompanionMilestoneServiceSetup) {
     this.logger.debug('Setting up health diagnostic service');
 
     this.registerTask(setup.taskManager);
   }
 
-  public async start(start: TrialCompanionServiceStart) {
+  public async start(start: TrialCompanionMilestoneServiceStart, core?: CoreStart) {
     this.logger.debug('Starting health diagnostic service');
+
+    this._esClient = core?.elasticsearch.client.asInternalUser;
+    this._soClient =
+      start.core.savedObjects.createInternalRepository() as unknown as SavedObjectsClientContract;
+    this.packageService = start.packageService;
 
     await this.scheduleTask(start.taskManager);
   }
 
-  private async detectMilestone() {
-    this.logger.info('>> Running milestone task');
+  /**
+   * Detects which milestone the user hasn't reached and returns a tuple of [step number, message]
+   * Returns [-1, 'All milestones complete'] if all milestones are complete
+   */
+  async detectMilestone(): Promise<[number, string]> {
+    const packages = await this.verifyNonDefaultPackagesInstalled();
+    this.logger.info('Running milestone detection task');
+    if (packages.length === 0) {
+      this.logger.info(`Advising user to take step ${MILESTONE_STEPS.INSTALL_INTEGRATIONS.step}`);
+      return [
+        MILESTONE_STEPS.INSTALL_INTEGRATIONS.step,
+        MILESTONE_STEPS.INSTALL_INTEGRATIONS.message,
+      ];
+    }
+
+    const collectorContext = {
+      esClient: this.esClient(),
+      soClient: this.savedObjectsClient(),
+    };
+
+    const rulesCount = await this.verifyEnabledSecurityRulesCount(collectorContext);
+    if (rulesCount === 0) {
+      this.logger.info(`Advising user to take step ${MILESTONE_STEPS.ENABLE_SECURITY_RULES.step}`);
+      return [
+        MILESTONE_STEPS.ENABLE_SECURITY_RULES.step,
+        MILESTONE_STEPS.ENABLE_SECURITY_RULES.message,
+      ];
+    }
+
+    const alertsCount = await this.verifyTotalAlertsCount(collectorContext);
+    if (alertsCount === 0) {
+      this.logger.info(`Advising user to take step ${MILESTONE_STEPS.CREATE_ALERTS.step}`);
+      return [MILESTONE_STEPS.CREATE_ALERTS.step, MILESTONE_STEPS.CREATE_ALERTS.message];
+    }
+
+    // All milestones complete
+    this.logger.info('All milestones complete');
+    return [
+      MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step,
+      MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.message,
+    ];
+  }
+
+  /**
+   * Milestone 3 of the current milestones dashboard: non-default packages installed
+   */
+  private async verifyNonDefaultPackagesInstalled(): Promise<string[]> {
+    try {
+      this.logger.debug('verifyNonDefaultPackagesInstalled: Fetching Fleet packages');
+
+      if (!this.packageService) {
+        // TODO: What do we do in this case? Probably skip this milestone and continue with the next one?
+        // According to the startup code fleet may be nil
+        this.logger.warn('verifyNonDefaultPackagesInstalled: fleet is not available');
+        return [];
+      }
+      const packages = await this.packageService.asInternalUser.getPackages();
+      const installedPackages = packages.filter((pkg) => pkg.status === 'installed');
+      const installedPackageNames = installedPackages.map((pkg) => pkg.name);
+      // filter out defaults security_ai_prompts, security_detection_engine, elastic_agent, fleet_server
+      const defaultPackages = [
+        'endpoint', // installed by default on serverless even if not visible in the UI (see Slack thread), TODO: should be handled differently for ECH
+        'security_ai_prompts',
+        'security_detection_engine',
+        'elastic_agent',
+        'fleet_server',
+      ];
+      const nonDefaultPackages = installedPackageNames.filter(
+        (pkg) => !defaultPackages.includes(pkg)
+      );
+      this.logger.info(
+        `verifyNonDefaultPackagesInstalled: Fetched Fleet packages: ${
+          packages.length
+        } items, non-default packages: ${
+          nonDefaultPackages.length
+        }, installed package names: ${nonDefaultPackages.join(', ')}`
+      );
+      return nonDefaultPackages;
+    } catch (error) {
+      this.logger.error('verifyNonDefaultPackagesInstalled: Error fetching Fleet packages', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Milestone 6: Enabled security rules count
+   */
+  private async verifyEnabledSecurityRulesCount(
+    collectorContext: CollectorFetchContext
+  ): Promise<number> {
+    try {
+      if (!this.usageCollection) {
+        this.logger.warn('verifyEnabledSecurityRulesCount: usageCollection is not available');
+        return 0;
+      }
+
+      this.logger.info(
+        'verifyEnabledSecurityRulesCount: Fetching rules telemetry from usage collector'
+      );
+      const securitySolutionCollector =
+        this.usageCollection.getCollectorByType('security_solution');
+
+      if (!securitySolutionCollector) {
+        this.logger.warn('verifyEnabledSecurityRulesCount: security_solution collector not found');
+        return 0;
+      }
+
+      // Fetch the telemetry data from the collector with proper context
+      const securitySolutionResult = await securitySolutionCollector.fetch(collectorContext);
+
+      this.logger.info(
+        `verifyEnabledSecurityRulesCount: Security solution telemetry result keys: ${Object.keys(
+          securitySolutionResult || {}
+        ).join(', ')}`
+      );
+
+      // Extract enabled rules count from detection_rules usage
+      interface SecuritySolutionTelemetry {
+        detectionMetrics?: {
+          detection_rules?: {
+            detection_rule_usage?: {
+              custom_total?: { enabled?: number };
+              elastic_total?: { enabled?: number };
+            };
+          };
+        };
+      }
+      const detectionMetrics = (securitySolutionResult as SecuritySolutionTelemetry)
+        ?.detectionMetrics;
+      const detectionRules = detectionMetrics?.detection_rules;
+      const ruleUsage = detectionRules?.detection_rule_usage;
+
+      const customEnabled = ruleUsage?.custom_total?.enabled ?? 0;
+      const elasticEnabled = ruleUsage?.elastic_total?.enabled ?? 0;
+      const rulesCount = customEnabled + elasticEnabled;
+
+      this.logger.debug(
+        `verifyEnabledSecurityRulesCount: Rules count - custom: ${customEnabled}, elastic: ${elasticEnabled}, total: ${rulesCount}`
+      );
+      return rulesCount;
+    } catch (error) {
+      this.logger.error(
+        `verifyEnabledSecurityRulesCount: Error fetching security solution telemetry: ${error}`
+      );
+      return 0;
+    }
+  }
+
+  /**
+   * Milestone 7: Total alerts count
+   * Retrieves cached telemetry data from the alerts usage collector
+   * This is the same metric as stack_stats.kibana.plugins.alerts.count_alerts_total
+   */
+  private async verifyTotalAlertsCount(collectorContext: CollectorFetchContext): Promise<number> {
+    try {
+      if (!this.usageCollection) {
+        this.logger.warn('verifyTotalAlertsCount: usageCollection is not available');
+        return 0;
+      }
+
+      this.logger.debug('verifyTotalAlertsCount: Fetching alerts telemetry from usage collector');
+      const alertsCollector = this.usageCollection.getCollectorByType('alerts');
+
+      if (!alertsCollector) {
+        this.logger.warn('verifyTotalAlertsCount: alerts collector not found');
+        return 0;
+      }
+
+      // Fetch the telemetry data from the collector with proper context
+      const alertsCountResult = await alertsCollector.fetch(collectorContext);
+
+      this.logger.debug(
+        `verifyTotalAlertsCount: Alerts telemetry result keys: ${Object.keys(
+          alertsCountResult || {}
+        ).join(', ')}`
+      );
+
+      // Extract count_alerts_total from the result
+      const totalAlertsCount =
+        (alertsCountResult as { count_alerts_total?: number })?.count_alerts_total ?? 0;
+
+      this.logger.debug(`verifyTotalAlertsCount: Total alerts count: ${totalAlertsCount}`);
+      return totalAlertsCount;
+    } catch (error) {
+      this.logger.error('verifyTotalAlertsCount: Error fetching alerts telemetry', error);
+      return 0;
+    }
   }
 
   private registerTask(taskManager: TaskManagerSetupContract) {
@@ -83,5 +314,19 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     });
 
     this.logger.info('Task scheduled');
+  }
+
+  private savedObjectsClient(): SavedObjectsClientContract {
+    if (this._soClient === undefined || this._soClient === null) {
+      throw Error('saved objects client is unavailable');
+    }
+    return this._soClient;
+  }
+
+  private esClient(): ElasticsearchClient {
+    if (this._esClient === undefined || this._esClient === null) {
+      throw Error('elasticsearch client is unavailable');
+    }
+    return this._esClient;
   }
 }

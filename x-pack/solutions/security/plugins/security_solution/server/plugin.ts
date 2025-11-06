@@ -621,55 +621,6 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.logger.warn('Task Manager not available, health diagnostic task not registered.');
     }
 
-    // Register Trial Milestone Detection Task
-    // if (plugins.taskManager) {
-    // const trialMilestoneLogger = this.logger.get('trialMilestoneDetection');
-    // const trialMilestoneDetectionTask = new TrialMilestoneDetectionTask({
-    //   logger: trialMilestoneLogger,
-    //   core: core.getStartServices,
-    //   endpointAppContextService: this.endpointAppContextService,
-    //   usageCollection: plugins.usageCollection,
-    // });
-    //
-    // TODO: move to async setup
-    // plugins.taskManager.registerTaskDefinitions({
-    //   [TRIAL_MILESTONE_TASK_TYPE]: {
-    //     title: 'Trial Milestones Detection',
-    //     description: 'This task periodically checks currently achieved milestones.',
-    //     timeout: '1m',
-    //     maxAttempts: 1,
-    //     createTaskRunner: ({ taskInstance }) => {
-    //       return {
-    //         async run() {
-    //           const { state } = taskInstance;
-    //
-    //           try {
-    //             const [step, message] = await trialMilestoneDetectionTask.detectMilestone();
-    //
-    //             trialMilestoneLogger.info(
-    //               `Milestone detection result: step - ${step}, message - ${message}`
-    //             );
-    //           } catch (error) {
-    //             trialMilestoneLogger.error('Error running milestone detection task', error);
-    //           }
-    //
-    //           return { state };
-    //         },
-    //         async cancel() {
-    //           trialMilestoneLogger.warn('Task timed out', {
-    //             task: TRIAL_MILESTONE_TASK_ID,
-    //           } as LogMeta);
-    //         },
-    //       };
-    //     },
-    //   },
-    // });
-    // } else {
-    //   this.logger.warn(
-    //     'Task Manager not available, trial milestone detection task not registered.'
-    //   );
-    // }
-
     return {
       setProductFeaturesConfigurator:
         productFeaturesService.setProductFeaturesConfigurator.bind(productFeaturesService),
@@ -949,6 +900,7 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.trialCompanionMilestoneService
         .start({
           taskManager: plugins.taskManager,
+          packageService,
           core,
         })
         .catch((e) => {
@@ -959,25 +911,6 @@ export class Plugin implements ISecuritySolutionPlugin {
     } else {
       this.logger.warn('Task Manager not available, health diagnostic task not started.');
     }
-
-    // if (plugins.taskManager) {
-    //   const taskManager = plugins.taskManager;
-    //
-    //   // TODO: move to milestone service
-    //   const taskInstance = await taskManager.ensureScheduled({
-    //     id: TRIAL_MILESTONE_TASK_ID,
-    //     taskType: TRIAL_MILESTONE_TASK_TYPE,
-    //     schedule: { interval: TRIAL_MILESTONE_TASK_INTERVAL },
-    //     params: {},
-    //     state: {},
-    //     scope: ['uptime'],
-    //   });
-    //
-    //   this.logger.info('Trial milestone detection task scheduled', {
-    //     task: TRIAL_MILESTONE_TASK_ID,
-    //     interval: taskInstance.schedule?.interval,
-    //   } as LogMeta);
-    // }
 
     return {};
   }

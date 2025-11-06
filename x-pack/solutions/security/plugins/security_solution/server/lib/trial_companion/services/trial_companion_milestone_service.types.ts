@@ -6,6 +6,7 @@
  */
 
 import type { CoreStart } from '@kbn/core/server';
+import type { PackageService } from '@kbn/fleet-plugin/server';
 import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
@@ -17,6 +18,7 @@ export interface TrialCompanionMilestoneServiceSetup {
 
 export interface TrialCompanionMilestoneServiceStart {
   taskManager: TaskManagerStartContract;
+  packageService: PackageService;
   core: CoreStart;
 }
 
