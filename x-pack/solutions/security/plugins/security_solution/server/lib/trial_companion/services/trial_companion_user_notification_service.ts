@@ -32,9 +32,6 @@ export class TrialCompanionUserNotificationServiceImpl
   }
 
   async currentMilestone(userId: string): Promise<TrialCompanionUserNotification> {
-    this.logger.info(
-      `TODO: implement method TrialCompanionUserNotificationService.currentMilestone`
-    );
     const milestone = await this.registry.getCurrent();
     const userStatus = await this.getUserMilestoneStatus(userId);
     let shouldShow;
