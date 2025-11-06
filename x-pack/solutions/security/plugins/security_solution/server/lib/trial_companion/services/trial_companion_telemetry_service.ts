@@ -61,7 +61,21 @@ export class TrialCompanionTelemetryServiceImpl implements TrialCompanionTelemet
     this.logger.info('Updating trial companion telemetry artifact', { artifact } as LogMeta);
     const client = this.savedObjectsClient();
 
-    const opts: SavedObjectsCreateOptions = {};
+    const opts: SavedObjectsCreateOptions = { overwrite: true };
+
+    const ids = await client
+      .find({ type: telemetrySavedObjectType })
+      .then(({ saved_objects: savedObjects }) => {
+        return savedObjects.map((so) => {
+          return { type: telemetrySavedObjectType, id: so.id };
+        });
+      });
+
+    this.logger.info('About to delete existing trial companion telemetry artifacts', {
+      count: ids.length,
+    } as LogMeta);
+
+    await client.bulkDelete(ids);
 
     const result = await client.create(telemetrySavedObjectType, artifact, opts);
 
