@@ -15,6 +15,7 @@ import type {
   UsageCollectionSetup,
 } from '@kbn/usage-collection-plugin/server';
 import type { PackageService } from '@kbn/fleet-plugin/server';
+import { i18n } from '@kbn/i18n';
 import type {
   TrialCompanionMilestoneService,
   TrialCompanionMilestoneServiceSetup,
@@ -33,22 +34,89 @@ const TIMEOUT = '10m';
  * Milestone step numbers and their corresponding messages
  * These map to the milestone numbers in the Security Portal dashboard
  */
-const MILESTONE_STEPS = {
+export const ALL_MILESTONES_COMPLETE_MESSAGE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.allMilestonesCompleteMessage',
+  {
+    defaultMessage: 'Congratulations! You’ve completed all the steps to get started with Security.',
+  }
+);
+
+export const ALL_MILESTONES_COMPLETE_TITLE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.allMilestonesCompleteTitle',
+  {
+    defaultMessage: 'You’re all set!',
+  }
+);
+
+export const INSTALL_INTEGRATIONS_MESSAGE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.installIntegrationsMessage',
+  {
+    defaultMessage:
+      'Ready to connect your tools? Add integrations to see all your logs, metrics, and traces in one place.',
+  }
+);
+
+export const INSTALL_INTEGRATIONS_TITLE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.installIntegrationsTitle',
+  {
+    defaultMessage: 'Add your data sources',
+  }
+);
+
+export const ENABLE_SECURITY_RULES_MESSAGE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.enableSecurityRulesMessage',
+  {
+    defaultMessage:
+      'Ready to enable security rules? You can add our recommendations or create your own.',
+  }
+);
+
+export const ENABLE_SECURITY_RULES_TITLE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.enableSecurityRulesTitle',
+  {
+    defaultMessage: 'Start detecting threats',
+  }
+);
+
+export const CREATE_ALERTS_MESSAGE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.createAlertsMessage',
+  {
+    defaultMessage:
+      'Generate a sample alert to see how your rules work and what happens when a threat is found.',
+  }
+);
+
+export const CREATE_ALERTS_TITLE = i18n.translate(
+  'xpack.securitySolution.trialCompanion.createAlertsTitle',
+  {
+    defaultMessage: 'CSee your rules in action',
+  }
+);
+
+export const MILESTONE_STEPS = {
   ALL_MILESTONES_COMPLETE: {
     step: -1,
-    message: 'All milestones complete',
+    message: ALL_MILESTONES_COMPLETE_MESSAGE,
+    title: ALL_MILESTONES_COMPLETE_TITLE,
+    app: '',
   },
   INSTALL_INTEGRATIONS: {
     step: 3,
-    message: 'Do you need help installing new integrations?',
+    message: INSTALL_INTEGRATIONS_MESSAGE,
+    title: INSTALL_INTEGRATIONS_TITLE,
+    app: '/fleet/policies',
   },
   ENABLE_SECURITY_RULES: {
     step: 6,
-    message: 'Would you like to enable security rules?',
+    message: ENABLE_SECURITY_RULES_MESSAGE,
+    title: ENABLE_SECURITY_RULES_TITLE,
+    app: '/security/rules/management',
   },
   CREATE_ALERTS: {
     step: 7,
-    message: 'Do you need help creating test alerts?',
+    message: CREATE_ALERTS_MESSAGE,
+    title: CREATE_ALERTS_TITLE,
+    app: '/security/alerts',
   },
 } as const;
 
@@ -93,7 +161,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
    * Detects which milestone the user hasn't reached and returns a tuple of [step number, message]
    * Returns [-1, 'All milestones complete'] if all milestones are complete
    */
-  async detectMilestone(): Promise<[number, string]> {
+  async detectMilestone(): Promise<[number, string, string, string]> {
     const packages = await this.verifyNonDefaultPackagesInstalled();
     this.logger.info('Running milestone detection task');
     if (packages.length === 0) {
@@ -101,6 +169,8 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       return [
         MILESTONE_STEPS.INSTALL_INTEGRATIONS.step,
         MILESTONE_STEPS.INSTALL_INTEGRATIONS.message,
+        MILESTONE_STEPS.INSTALL_INTEGRATIONS.title,
+        MILESTONE_STEPS.INSTALL_INTEGRATIONS.app,
       ];
     }
 
@@ -115,13 +185,20 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       return [
         MILESTONE_STEPS.ENABLE_SECURITY_RULES.step,
         MILESTONE_STEPS.ENABLE_SECURITY_RULES.message,
+        MILESTONE_STEPS.ENABLE_SECURITY_RULES.title,
+        MILESTONE_STEPS.ENABLE_SECURITY_RULES.app,
       ];
     }
 
     const alertsCount = await this.verifyTotalAlertsCount(collectorContext);
     if (alertsCount === 0) {
       this.logger.info(`Advising user to take step ${MILESTONE_STEPS.CREATE_ALERTS.step}`);
-      return [MILESTONE_STEPS.CREATE_ALERTS.step, MILESTONE_STEPS.CREATE_ALERTS.message];
+      return [
+        MILESTONE_STEPS.CREATE_ALERTS.step,
+        MILESTONE_STEPS.CREATE_ALERTS.message,
+        MILESTONE_STEPS.CREATE_ALERTS.title,
+        MILESTONE_STEPS.CREATE_ALERTS.app,
+      ];
     }
 
     // All milestones complete
@@ -129,6 +206,8 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     return [
       MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step,
       MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.message,
+      MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.title,
+      MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.app,
     ];
   }
 
@@ -297,12 +376,16 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
               if (!saved) {
                 const result = await this.trialCompanionMilestoneRegistryService.create(
                   current[0],
-                  current[1]
+                  current[1],
+                  current[2],
+                  current[3]
                 );
                 this.logger.info(`Saved new milestone: ${result}`);
               } else {
                 saved.id = current[0];
                 saved.message = current[1];
+                saved.title = current[2];
+                saved.app = current[3];
                 // TODO: update only if changed
                 const result = await this.trialCompanionMilestoneRegistryService.save(saved);
                 this.logger.info(`Updated existing milestone : ${result}`);

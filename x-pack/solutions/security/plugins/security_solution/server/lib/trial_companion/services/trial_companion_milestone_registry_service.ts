@@ -23,6 +23,8 @@ function toMilestone(result: SavedObject<MilestoneSavedObjectAttributes>): Trial
     id: result.attributes.milestoneId as MilestoneID,
     message: result.attributes.message,
     savedObjectId: result.id,
+    title: result.attributes.title,
+    app: result.attributes.app,
   } as TrialCompanionMilestone;
 }
 
@@ -60,6 +62,8 @@ export class TrialCompanionMilestoneRegistryServiceImpl
       {
         milestoneId: milestone.id,
         message: milestone.message,
+        title: milestone.title,
+        app: milestone.app,
       }
     );
 
@@ -75,12 +79,19 @@ export class TrialCompanionMilestoneRegistryServiceImpl
     return this.soClient;
   }
 
-  async create(id: MilestoneID, message: string): Promise<TrialCompanionMilestone> {
+  async create(
+    id: MilestoneID,
+    message: string,
+    title: string,
+    app: string
+  ): Promise<TrialCompanionMilestone> {
     const response = await this.savedObjectsClient().create<MilestoneSavedObjectAttributes>(
       MILESTONE_SAVED_OBJECT_TYPE,
       {
         milestoneId: id,
         message,
+        title,
+        app,
       }
     );
 

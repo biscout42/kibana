@@ -12,6 +12,8 @@ import type { MilestoneID } from '../types';
 export interface MilestoneSavedObjectAttributes {
   milestoneId: MilestoneID;
   message: string;
+  title: string;
+  app: string;
 }
 
 export const MILESTONE_SAVED_OBJECT_TYPE = 'trial-companion-milestone';
@@ -22,6 +24,12 @@ const savedObjectMappings: SavedObjectsType['mappings'] = {
       type: 'integer',
     },
     message: {
+      type: 'text',
+    },
+    title: {
+      type: 'text',
+    },
+    app: {
       type: 'text',
     },
   },

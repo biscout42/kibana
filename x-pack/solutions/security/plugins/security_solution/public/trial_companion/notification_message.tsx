@@ -12,13 +12,15 @@ import { FormattedMessage } from '@kbn/i18n-react';
 interface Props {
   message: string;
   onSeenBanner: () => void;
-  milestoneId: number;
+  title: string;
+  onViewButton: () => void;
 }
 
 export const TrialNotificationMessage: React.FC<Props> = ({
   message,
   onSeenBanner,
-  milestoneId,
+  title,
+  onViewButton,
 }) => {
   return (
     <EuiCallOut
@@ -28,20 +30,27 @@ export const TrialNotificationMessage: React.FC<Props> = ({
       title={
         <FormattedMessage
           id="xpack.securitySolution.trialNotifications.trialNotification.title"
-          defaultMessage="Notification message title 2"
+          defaultMessage="{title}"
+          values={{ title }}
         />
       }
     >
       <FormattedMessage
         id="xpack.securitySolution.trialNotifications.trialNotification.message"
-        defaultMessage="{milestoneId} :Tada: {message}"
-        values={{ milestoneId, message }}
+        defaultMessage="{message}"
+        values={{ message }}
       />
       <EuiSpacer size="s" />
-      <EuiButton size="s" onClick={onSeenBanner} color="success">
+      <EuiButton size="s" onClick={onSeenBanner} color="success" style={{ marginRight: '8px' }}>
         <FormattedMessage
           id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
           defaultMessage="Dismiss"
+        />
+      </EuiButton>
+      <EuiButton size="s" onClick={onViewButton} color="success">
+        <FormattedMessage
+          id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
+          defaultMessage="View"
         />
       </EuiButton>
     </EuiCallOut>

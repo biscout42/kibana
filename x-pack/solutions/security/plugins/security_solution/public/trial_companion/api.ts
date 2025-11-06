@@ -11,13 +11,16 @@ import { GET_TRIAL_COMPANION_MESSAGE } from '../../common/trial_companion/consta
 export interface GetNotificationResponse {
   message: string;
   shouldShow: boolean;
+  title: string;
+  app?: string;
+  milestoneId: number;
 }
 
 export const getNotification = async (): Promise<GetNotificationResponse> => {
   return KibanaServices.get().http.get<GetNotificationResponse>(GET_TRIAL_COMPANION_MESSAGE);
 };
 
-export const postMilestoneNotificationSeen = async (milestoneId: string): Promise<void> => {
+export const postMilestoneNotificationSeen = async (milestoneId: number): Promise<void> => {
   return KibanaServices.get().http.post<void>(GET_TRIAL_COMPANION_MESSAGE, {
     body: JSON.stringify({
       milestoneId,

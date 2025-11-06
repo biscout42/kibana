@@ -10,7 +10,7 @@ import type { SavedObjectsServiceStart } from '@kbn/core-saved-objects-server';
 export type MilestoneID = number;
 
 export interface TrialCompanionUserNotificationService {
-  notificationSeen(milestoneId: MilestoneID, userId: string);
+  notificationSeen(milestoneId: MilestoneID, userId: string): void;
   currentMilestone(userId: string): Promise<TrialCompanionUserNotification>;
 }
 
@@ -18,6 +18,8 @@ export interface TrialCompanionMilestone {
   id: MilestoneID;
   message: string;
   savedObjectId: string;
+  title: string;
+  app: string;
 }
 
 export interface TrialCompanionUserNotification {
@@ -27,7 +29,12 @@ export interface TrialCompanionUserNotification {
 
 export interface TrialCompanionMilestoneRegistryService {
   getCurrent(): Promise<TrialCompanionMilestone | undefined>;
-  create(id: MilestoneID, message: string): Promise<TrialCompanionMilestone>;
+  create(
+    id: MilestoneID,
+    message: string,
+    title: string,
+    app: string
+  ): Promise<TrialCompanionMilestone>;
   save(milestone: TrialCompanionMilestone): Promise<void>;
-  start(savedObjects: SavedObjectsServiceStart);
+  start(savedObjects: SavedObjectsServiceStart): void;
 }

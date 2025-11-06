@@ -26,7 +26,9 @@ export const TrialNotification: React.FC<Props> = () => {
   window.console.log('TrialNotification useGetNotification:', error, loading, value);
   const message = value?.message;
   const shouldShow = value?.shouldShow;
-  const milestoneId = value?.milestoneId;
+  const milestoneId = value?.milestoneId ?? 0;
+  const title = value?.title || '';
+  const app = value?.app;
 
   useInterval(() => {
     setCount((c) => c + 1);
@@ -47,12 +49,21 @@ export const TrialNotification: React.FC<Props> = () => {
       removeBanner();
     };
 
+    const onViewButton = () => {
+      postMilestoneNotificationSeen(milestoneId);
+      removeBanner();
+      if (app) {
+        startServices.application.navigateToApp(app);
+      }
+    };
+
     if (message && shouldShow && !bannerId.current) {
       const mount = toMountPoint(
         <TrialNotificationMessage
           message={message}
           onSeenBanner={onSeenBanner}
-          milestoneId={milestoneId}
+          title={title}
+          onViewButton={onViewButton}
         />,
         startServices
       );
@@ -61,7 +72,7 @@ export const TrialNotification: React.FC<Props> = () => {
     } else if (!shouldShow || !message) {
       removeBanner();
     } // else do nothing, keep the banner shown
-  }, [overlays, startServices, message, shouldShow, milestoneId]);
+  }, [overlays, startServices, message, shouldShow, milestoneId, title, app]);
 
   useEffect(() => {
     return () => {
@@ -71,4 +82,6 @@ export const TrialNotification: React.FC<Props> = () => {
       bannerId.current = undefined;
     };
   }, [overlays]);
+
+  return null;
 };

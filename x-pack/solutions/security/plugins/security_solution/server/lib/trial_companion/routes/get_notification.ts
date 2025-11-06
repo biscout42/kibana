@@ -65,6 +65,8 @@ export const registerGetNotificationRoute = (
             message: milestone.milestone?.message,
             shouldShow: milestone.shouldShow,
             milestoneId: milestone.milestone?.id,
+            title: milestone.milestone?.title,
+            app: milestone.milestone?.app,
           },
         });
       } catch (err) {
