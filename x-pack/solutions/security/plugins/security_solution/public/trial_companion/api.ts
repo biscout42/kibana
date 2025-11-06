@@ -17,12 +17,10 @@ export const getNotification = async (): Promise<GetNotificationResponse> => {
   return KibanaServices.get().http.get<GetNotificationResponse>(GET_TRIAL_COMPANION_MESSAGE);
 };
 
-export const postMilestoneNotificationSeen = async (
-  milestoneId: string
-): Promise<GetNotificationResponse> => {
-  return KibanaServices.get().http.post(GET_TRIAL_COMPANION_MESSAGE, {
-    body: {
+export const postMilestoneNotificationSeen = async (milestoneId: string): Promise<void> => {
+  return KibanaServices.get().http.post<void>(GET_TRIAL_COMPANION_MESSAGE, {
+    body: JSON.stringify({
       milestoneId,
-    },
+    }),
   });
 };
