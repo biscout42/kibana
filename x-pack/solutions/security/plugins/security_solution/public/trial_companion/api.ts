@@ -16,3 +16,13 @@ export interface GetNotificationResponse {
 export const getNotification = async (): Promise<GetNotificationResponse> => {
   return KibanaServices.get().http.get<GetNotificationResponse>(GET_TRIAL_COMPANION_MESSAGE);
 };
+
+export const postMilestoneNotificationSeen = async (
+  milestoneId: string
+): Promise<GetNotificationResponse> => {
+  return KibanaServices.get().http.post(GET_TRIAL_COMPANION_MESSAGE, {
+    body: {
+      milestoneId,
+    },
+  });
+};

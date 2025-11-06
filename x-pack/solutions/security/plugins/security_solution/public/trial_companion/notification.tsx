@@ -6,9 +6,10 @@
  */
 
 import useInterval from 'react-use/lib/useInterval';
+
 import React, { useEffect, useRef, useState } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
-import { useGetNotification } from './hooks/use_get_notification';
+import { useGetNotification, postMilestoneNotificationSeen } from './hooks/use_get_notification';
 import { useKibana } from '../common/lib/kibana';
 import { TrialNotificationMessage } from './notification_message';
 
@@ -28,6 +29,7 @@ export const TrialNotification: React.FC<Props> = () => {
   window.console.log('TrialNotification useGetNotification:', error, loading);
   const message = value?.message;
   const shouldShow = value?.shouldShow;
+  const milestoneId = value?.milestoneId;
 
   useInterval(() => {
     setCount((c) => c + 1);
@@ -42,9 +44,18 @@ export const TrialNotification: React.FC<Props> = () => {
       bannerId.current = undefined;
     };
 
+    const onSeenBanner = () => {
+      postMilestoneNotificationSeen(milestoneId);
+      removeBanner();
+    };
+
     if (message && shouldShow && !bannerId.current) {
       const mount = toMountPoint(
-        <TrialNotificationMessage message={message} onSeenBanner={removeBanner} />,
+        <TrialNotificationMessage
+          message={message}
+          onSeenBanner={onSeenBanner}
+          milestoneId={milestoneId}
+        />,
         startServices
       );
       window.console.log('mounted banner with id:', bannerId.current, message, bannerId.current);
@@ -52,7 +63,7 @@ export const TrialNotification: React.FC<Props> = () => {
     } else {
       removeBanner();
     } // else do nothing, keep the banner shown
-  }, [overlays, startServices, message, shouldShow]);
+  }, [overlays, startServices, message, shouldShow, milestoneId]);
 
   useEffect(() => {
     return () => {
