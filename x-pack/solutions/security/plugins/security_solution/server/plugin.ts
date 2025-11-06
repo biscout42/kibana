@@ -146,8 +146,8 @@ import { HealthDiagnosticServiceImpl } from './lib/telemetry/diagnostic/health_d
 import type { HealthDiagnosticService } from './lib/telemetry/diagnostic/health_diagnostic_service.types';
 import { ENTITY_RISK_SCORE_TOOL_ID } from './assistant/tools/entity_risk_score/entity_risk_score';
 import type { TelemetryQueryConfiguration } from './lib/telemetry/types';
-import type { TrialCompanionService } from './lib/trial_companion/services/trial_companion_service.types';
-import { TrialCompanionServiceImpl } from './lib/trial_companion/services/trial_companion_service';
+import type { TrialCompanionTelemetryService } from './lib/trial_companion/services/trial_companion_telemetry_service.types';
+import { TrialCompanionTelemetryServiceImpl } from './lib/trial_companion/services/trial_companion_telemetry_service';
 import type { TrialCompanionMilestoneService } from './lib/trial_companion/services/trial_companion_milestone_service.types';
 import { TrialCompanionMilestoneServiceImpl } from './lib/trial_companion/services/trial_companion_milestone_service';
 
@@ -168,7 +168,7 @@ export class Plugin implements ISecuritySolutionPlugin {
   private readonly asyncTelemetryEventsSender: IAsyncTelemetryEventsSender;
 
   private readonly healthDiagnosticService: HealthDiagnosticService;
-  private readonly trialCompanionService: TrialCompanionService;
+  private readonly trialCompanionTelemetryService: TrialCompanionTelemetryService;
   private readonly trialCompanionMilestoneService: TrialCompanionMilestoneService;
 
   private lists: ListPluginSetup | undefined; // TODO: can we create ListPluginStart?
@@ -229,7 +229,7 @@ export class Plugin implements ISecuritySolutionPlugin {
     this.logger.debug('plugin initialized');
 
     this.healthDiagnosticService = new HealthDiagnosticServiceImpl(this.logger);
-    this.trialCompanionService = new TrialCompanionServiceImpl(this.logger);
+    this.trialCompanionTelemetryService = new TrialCompanionTelemetryServiceImpl(this.logger);
     this.trialCompanionMilestoneService = new TrialCompanionMilestoneServiceImpl(this.logger);
   }
 
@@ -462,7 +462,7 @@ export class Plugin implements ISecuritySolutionPlugin {
       core.docLinks,
       this.endpointContext,
       plugins.usageCollection,
-      this.trialCompanionService
+      this.trialCompanionTelemetryService
     );
 
     registerEndpointRoutes(router, this.endpointContext);
@@ -610,7 +610,7 @@ export class Plugin implements ISecuritySolutionPlugin {
         taskManager: plugins.taskManager,
       });
 
-      this.trialCompanionService.setup({
+      this.trialCompanionTelemetryService.setup({
         taskManager: plugins.taskManager,
       });
 
@@ -886,7 +886,7 @@ export class Plugin implements ISecuritySolutionPlugin {
         } as LogMeta);
       });
 
-      this.trialCompanionService
+      this.trialCompanionTelemetryService
         .start({
           taskManager: plugins.taskManager,
           core,

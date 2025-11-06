@@ -8,7 +8,7 @@ import type { Logger, IRouter } from '@kbn/core/server';
 import { z } from '@kbn/zod';
 import { isNonEmptyString } from '@kbn/zod-helpers';
 import { GET_TELEMETRY_ARTIFACT as GET_TELEMETRY_ARTIFACTS } from '../../../../common/trial_companion/constants';
-import type { TrialCompanionService } from '../services/trial_companion_service.types';
+import type { TrialCompanionTelemetryService } from '../services/trial_companion_telemetry_service.types';
 
 export type NonEmptyString = z.infer<typeof NonEmptyString>;
 export const NonEmptyString = z.string().min(1).superRefine(isNonEmptyString);
@@ -21,7 +21,7 @@ export const PostLaunchTaskRequestQuery = z.object({
 export const registerGetTelemetryArtifactRoute = (
   router: IRouter,
   logger: Logger,
-  trialCompanionService?: TrialCompanionService
+  trialCompanionTelemetryService?: TrialCompanionTelemetryService
 ) => {
   const log = logger.get('telemetry-artifact');
 
@@ -43,7 +43,7 @@ export const registerGetTelemetryArtifactRoute = (
     async (_, _request, response) => {
       log.info('Running get telemetry artifact task');
 
-      const result = await trialCompanionService?.listTelemetryArtifacs();
+      const result = await trialCompanionTelemetryService?.listTelemetryArtifacs();
       return response.ok({
         body: {
           artifacts: result,

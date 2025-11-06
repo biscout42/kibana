@@ -54,7 +54,7 @@ import { registerEntityAnalyticsRoutes } from '../lib/entity_analytics/register_
 import { registerSiemMigrationsRoutes } from '../lib/siem_migrations/routes';
 import { registerAssetInventoryRoutes } from '../lib/asset_inventory/routes';
 import { registerSiemReadinessRoutes } from '../lib/siem_readiness';
-import type { TrialCompanionService } from '../lib/trial_companion/services/trial_companion_service.types';
+import type { TrialCompanionTelemetryService } from '../lib/trial_companion/services/trial_companion_telemetry_service.types';
 
 export const initRoutes = (
   router: SecuritySolutionPluginRouter,
@@ -74,7 +74,7 @@ export const initRoutes = (
   docLinks: DocLinksServiceSetup,
   endpointContext: EndpointAppContext,
   usageCollection?: UsageCollectionSetup,
-  trialCompanionService?: TrialCompanionService
+  trialCompanionTelemetryService?: TrialCompanionTelemetryService
 ) => {
   registerFleetIntegrationsRoutes(router, logger);
   registerLegacyRuleActionsRoutes(router, logger);
@@ -150,6 +150,6 @@ export const initRoutes = (
     logger,
     usageCollection,
     previewTelemetryReceiver,
-    trialCompanionService
+    trialCompanionTelemetryService
   );
 };

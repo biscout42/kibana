@@ -11,18 +11,18 @@ import type {
   TaskManagerStartContract,
 } from '@kbn/task-manager-plugin/server';
 
-export interface TrialCompanionServiceSetup {
+export interface TrialCompanionTelemetryServiceSetup {
   taskManager: TaskManagerSetupContract;
 }
 
-export interface TrialCompanionServiceStart {
+export interface TrialCompanionTelemetryServiceStart {
   taskManager: TaskManagerStartContract;
   core: CoreStart;
 }
 
-export interface TrialCompanionService {
-  setup(setup: TrialCompanionServiceSetup): void;
-  start(start: TrialCompanionServiceStart): Promise<void>;
+export interface TrialCompanionTelemetryService {
+  setup(setup: TrialCompanionTelemetryServiceSetup): void;
+  start(start: TrialCompanionTelemetryServiceStart): Promise<void>;
   updateTelemetryArtifact: (artifact: TrialCompanionArtifact) => Promise<void>;
   listTelemetryArtifacs: () => Promise<TrialCompanionArtifact[]>;
 }

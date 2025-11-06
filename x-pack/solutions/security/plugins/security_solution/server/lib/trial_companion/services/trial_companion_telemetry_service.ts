@@ -20,10 +20,10 @@ import type {
 } from '@kbn/core/server';
 import type {
   TrialCompanionArtifact,
-  TrialCompanionService,
-  TrialCompanionServiceSetup,
-  TrialCompanionServiceStart,
-} from './trial_companion_service.types';
+  TrialCompanionTelemetryService,
+  TrialCompanionTelemetryServiceSetup,
+  TrialCompanionTelemetryServiceStart,
+} from './trial_companion_telemetry_service.types';
 import { newTelemetryLogger } from '../../telemetry/helpers';
 import { telemetrySavedObjectType } from '../saved_object_mappings';
 import { artifactService } from '../../telemetry/artifact';
@@ -33,7 +33,7 @@ const TASK_ID = `${TASK_TYPE}:1.0.0`;
 const INTERVAL = '1h';
 const TIMEOUT = '10m';
 
-export class TrialCompanionServiceImpl implements TrialCompanionService {
+export class TrialCompanionTelemetryServiceImpl implements TrialCompanionTelemetryService {
   private readonly logger: Logger;
 
   private _soClient?: SavedObjectsClientContract;
@@ -43,13 +43,13 @@ export class TrialCompanionServiceImpl implements TrialCompanionService {
     this.logger = newTelemetryLogger(logger.get('trial-companion-telemetry-service'), mdc);
   }
 
-  public setup(setup: TrialCompanionServiceSetup) {
+  public setup(setup: TrialCompanionTelemetryServiceSetup) {
     this.logger.debug('Setting up health diagnostic service');
 
     this.registerTask(setup.taskManager);
   }
 
-  public async start(start: TrialCompanionServiceStart) {
+  public async start(start: TrialCompanionTelemetryServiceStart) {
     this.logger.debug('Starting health diagnostic service');
 
     this._soClient =
