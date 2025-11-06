@@ -54,8 +54,8 @@ import { registerEntityAnalyticsRoutes } from '../lib/entity_analytics/register_
 import { registerSiemMigrationsRoutes } from '../lib/siem_migrations/routes';
 import { registerAssetInventoryRoutes } from '../lib/asset_inventory/routes';
 import { registerSiemReadinessRoutes } from '../lib/siem_readiness';
-import type { TrialCompanionService } from '../lib/trial_companion/services/trial_companion_service.types';
-import type { TrialCompanionMilestoneService } from '../lib/trial_companion/types';
+import type { TrialCompanionTelemetryService } from '../lib/trial_companion/services/trial_companion_telemetry_service.types';
+import type { TrialCompanionMilestoneRegistryService } from '../lib/trial_companion/types';
 
 export const initRoutes = (
   router: SecuritySolutionPluginRouter,
@@ -75,8 +75,8 @@ export const initRoutes = (
   docLinks: DocLinksServiceSetup,
   endpointContext: EndpointAppContext,
   usageCollection?: UsageCollectionSetup,
-  trialCompanionService?: TrialCompanionService,
-  trialCompanionMilestoneService: TrialCompanionMilestoneService
+  trialCompanionTelemetryService?: TrialCompanionTelemetryService,
+  trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
 ) => {
   registerFleetIntegrationsRoutes(router, logger);
   registerLegacyRuleActionsRoutes(router, logger);
@@ -150,9 +150,9 @@ export const initRoutes = (
   registerTrialCompanionRoutes(
     router,
     logger,
-    trialCompanionMilestoneService,
+    trialCompanionMilestoneRegistryService,
     usageCollection,
     previewTelemetryReceiver,
-    trialCompanionService
+    trialCompanionTelemetryService
   );
 };

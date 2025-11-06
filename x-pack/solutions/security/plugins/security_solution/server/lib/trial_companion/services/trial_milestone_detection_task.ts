@@ -4,6 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
+// TODO: deprecated, remove once we verify the new task works as expected
 
 import type { CoreStart, Logger, StartServicesAccessor } from '@kbn/core/server';
 import type {

@@ -6,27 +6,23 @@
  */
 
 import type { CoreStart } from '@kbn/core/server';
+import type { PackageService } from '@kbn/fleet-plugin/server';
 import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
 } from '@kbn/task-manager-plugin/server';
 
-export interface TrialCompanionServiceSetup {
+export interface TrialCompanionMilestoneServiceSetup {
   taskManager: TaskManagerSetupContract;
 }
 
-export interface TrialCompanionServiceStart {
+export interface TrialCompanionMilestoneServiceStart {
   taskManager: TaskManagerStartContract;
+  packageService: PackageService;
   core: CoreStart;
 }
 
-export interface TrialCompanionService {
-  setup(setup: TrialCompanionServiceSetup): void;
-  start(start: TrialCompanionServiceStart): Promise<void>;
-  updateTelemetryArtifact: (artifact: TrialCompanionArtifact) => Promise<void>;
-  listTelemetryArtifacs: () => Promise<TrialCompanionArtifact[]>;
-}
-
-export interface TrialCompanionArtifact {
-  cluster: string;
+export interface TrialCompanionMilestoneService {
+  setup(setup: TrialCompanionMilestoneServiceSetup): void;
+  start(start: TrialCompanionMilestoneServiceStart): Promise<void>;
 }

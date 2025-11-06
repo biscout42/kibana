@@ -12,7 +12,7 @@ import type { EncryptedSavedObjectsPluginSetup } from '@kbn/encrypted-saved-obje
 import { referenceDataSavedObjectType } from './endpoint/lib/reference_data';
 import { protectionUpdatesNoteType } from './endpoint/lib/protection_updates_note/saved_object_mappings';
 import { noteType, pinnedEventType, timelineType } from './lib/timeline/saved_object_mappings';
-import { telemetryType } from './lib/trial_companion/saved_object_mappings';
+import { userMilestoneSeenSavedObject, telemetryType } from './lib/trial_companion/saved_objects';
 // eslint-disable-next-line no-restricted-imports
 import { legacyType as legacyRuleActionsType } from './lib/detection_engine/rule_actions_legacy';
 import { prebuiltRuleAssetType } from './lib/detection_engine/prebuilt_rules';
@@ -28,8 +28,7 @@ import {
   PrivilegeMonitoringApiKeyEncryptionParams,
   PrivilegeMonitoringApiKeyType,
 } from './lib/entity_analytics/privilege_monitoring/auth/saved_object';
-import { userMilestoneSeenSavedObject } from './lib/trial_companion/saved_object/user_milestone_seen_saved_object';
-import { trialCompanionMilestoneSeenSavedObject } from './lib/trial_companion/saved_object/milestone_saved_object';
+import { trialCompanionMilestoneSeenSavedObject } from './lib/trial_companion/saved_objects/milestone_saved_object';
 
 const types = [
   noteType,

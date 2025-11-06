@@ -12,12 +12,12 @@ import { buildSiemResponse } from '../../detection_engine/routes/utils';
 import type { TrialMilestoneDetectionTaskDeps } from '../services/trial_milestone_detection_task';
 import { TrialMilestoneDetectionTask } from '../services/trial_milestone_detection_task';
 import type { EndpointAppContextService } from '../../../endpoint/endpoint_app_context_services';
-import type { TrialCompanionMilestoneService } from '../types';
+import type { TrialCompanionMilestoneRegistryService } from '../types';
 
 export const registerGetNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
-  TrialCompanionMilestoneService: TrialCompanionMilestoneService
+  TrialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
 ) => {
   router.get(
     {

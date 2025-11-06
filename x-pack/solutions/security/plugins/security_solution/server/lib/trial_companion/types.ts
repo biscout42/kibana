@@ -25,7 +25,7 @@ export interface TrialCompanionUserNotification {
   shouldShow: boolean;
 }
 
-export interface TrialCompanionMilestoneService {
+export interface TrialCompanionMilestoneRegistryService {
   getCurrent(): Promise<TrialCompanionMilestone | undefined>;
   save(milestone: TrialCompanionMilestone): Promise<void>;
   start(savedObjects: SavedObjectsServiceStart);
