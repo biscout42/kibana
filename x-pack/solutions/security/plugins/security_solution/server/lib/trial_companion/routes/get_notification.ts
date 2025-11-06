@@ -6,18 +6,18 @@
  */
 import type { Logger } from '@kbn/core/server';
 import { transformError } from '@kbn/securitysolution-es-utils';
-import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
 import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
 import type { SecuritySolutionPluginRouter } from '../../../types';
 import { buildSiemResponse } from '../../detection_engine/routes/utils';
 import type { TrialMilestoneDetectionTaskDeps } from '../services/trial_milestone_detection_task';
 import { TrialMilestoneDetectionTask } from '../services/trial_milestone_detection_task';
 import type { EndpointAppContextService } from '../../../endpoint/endpoint_app_context_services';
+import type { TrialCompanionMilestoneService } from '../types';
 
 export const registerGetNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
-  usageCollection?: UsageCollectionSetup
+  TrialCompanionMilestoneService: TrialCompanionMilestoneService
 ) => {
   router.get(
     {
@@ -46,7 +46,7 @@ export const registerGetNotificationRoute = (
 
         const securitySolution = await context.securitySolution;
         const fleet: EndpointAppContextService = securitySolution.getInternalFleetServices();
-        const soClient = core.savedObjects.client;
+        const soClient = core.savedObjects.getClient();
 
         // soClient.get()
 

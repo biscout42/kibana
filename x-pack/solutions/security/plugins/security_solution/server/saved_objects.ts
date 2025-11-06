@@ -29,6 +29,7 @@ import {
   PrivilegeMonitoringApiKeyType,
 } from './lib/entity_analytics/privilege_monitoring/auth/saved_object';
 import { userMilestoneSeenSavedObject } from './lib/trial_companion/saved_object/user_milestone_seen_saved_object';
+import { trialCompanionMilestoneSeenSavedObject } from './lib/trial_companion/saved_object/milestone_saved_object';
 
 const types = [
   noteType,
@@ -49,6 +50,7 @@ const types = [
   referenceDataSavedObjectType,
   telemetryType,
   userMilestoneSeenSavedObject,
+  trialCompanionMilestoneSeenSavedObject,
 ];
 
 export const savedObjectTypes = types.map((type) => type.name);

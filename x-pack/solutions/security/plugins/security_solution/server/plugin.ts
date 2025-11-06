@@ -19,6 +19,7 @@ import type { ILicense } from '@kbn/licensing-types';
 import type { NewPackagePolicy, UpdatePackagePolicy } from '@kbn/fleet-plugin/common';
 import { FLEET_ENDPOINT_PACKAGE } from '@kbn/fleet-plugin/common';
 
+import { TrialCompanionMilestoneServiceImpl } from './lib/trial_companion/services/trial_companion_milestone_service';
 import { migrateEndpointDataToSupportSpaces } from './endpoint/migrations/space_awareness_migration';
 import { SavedObjectsClientFactory } from './endpoint/services/saved_objects';
 import { registerEntityStoreDataViewRefreshTask } from './lib/entity_analytics/entity_store/tasks/data_view_refresh/data_view_refresh_task';
@@ -154,6 +155,7 @@ import {
   TASK_ID as TRIAL_MILESTONE_TASK_ID,
   INTERVAL as TRIAL_MILESTONE_TASK_INTERVAL,
 } from './lib/trial_companion/services/trial_milestone_detection_task';
+import type { TrialCompanionMilestoneService } from './lib/trial_companion/types';
 
 export type { SetupPlugins, StartPlugins, PluginSetup, PluginStart } from './plugin_contract';
 
@@ -185,6 +187,7 @@ export class Plugin implements ISecuritySolutionPlugin {
   private checkMetadataTransformsTask: CheckMetadataTransformsTask | undefined;
   private telemetryUsageCounter?: UsageCounter;
   private endpointContext: EndpointAppContext;
+  private trialCompanionMilestoneService: TrialCompanionMilestoneService;
 
   private isServerless: boolean;
 
@@ -233,6 +236,7 @@ export class Plugin implements ISecuritySolutionPlugin {
 
     this.healthDiagnosticService = new HealthDiagnosticServiceImpl(this.logger);
     this.trialCompanionService = new TrialCompanionServiceImpl(this.logger);
+    this.trialCompanionMilestoneService = new TrialCompanionMilestoneServiceImpl(this.logger);
   }
 
   public async setup(
@@ -464,7 +468,8 @@ export class Plugin implements ISecuritySolutionPlugin {
       core.docLinks,
       this.endpointContext,
       plugins.usageCollection,
-      this.trialCompanionService
+      this.trialCompanionService,
+      this.trialCompanionMilestoneService
     );
 
     registerEndpointRoutes(router, this.endpointContext);
@@ -959,6 +964,8 @@ export class Plugin implements ISecuritySolutionPlugin {
         interval: taskInstance.schedule?.interval,
       } as LogMeta);
     }
+
+    this.trialCompanionMilestoneService.start(core.savedObjects);
 
     return {};
   }
