@@ -11,13 +11,12 @@ import type {
   SavedObjectsClientContract,
   SavedObjectsServiceStart,
 } from '@kbn/core/server';
-import { MILESTONE_SAVED_OBJECT_TYPE } from '../saved_objects/milestone_saved_object';
 import type {
   MilestoneID,
   TrialCompanionMilestone,
   TrialCompanionMilestoneRegistryService,
 } from '../types';
-import type { MilestoneSavedObjectAttributes } from '../saved_objects/milestone_saved_object';
+import { type MilestoneSavedObjectAttributes, MILESTONE_SAVED_OBJECT_TYPE } from '../saved_objects';
 
 function toMilestone(result: SavedObject<MilestoneSavedObjectAttributes>): TrialCompanionMilestone {
   return {

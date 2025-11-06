@@ -26,11 +26,10 @@ const savedObjectMappings: SavedObjectsType['mappings'] = {
   },
 };
 
-export const userMilestoneSeenSavedObject: SavedObjectsType<UserMilestoneSeenSavedObjectAttributes> =
-  {
-    name: USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
-    indexPattern: SECURITY_SOLUTION_SAVED_OBJECT_INDEX,
-    hidden: false,
-    namespaceType: 'multiple-isolated',
-    mappings: savedObjectMappings,
-  };
+export const userMilestoneSeenSavedObject: SavedObjectsType = {
+  name: USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
+  indexPattern: SECURITY_SOLUTION_SAVED_OBJECT_INDEX,
+  hidden: false,
+  namespaceType: 'multiple-isolated',
+  mappings: savedObjectMappings,
+};
