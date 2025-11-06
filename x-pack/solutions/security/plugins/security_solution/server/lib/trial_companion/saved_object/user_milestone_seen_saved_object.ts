@@ -9,7 +9,7 @@ import type { SavedObjectsType } from '@kbn/core/server';
 
 export interface UserMilestoneSeenSavedObjectAttributes {
   userId: string;
-  milestoneIds: string[];
+  milestoneIds: number[];
 }
 
 export const USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE = 'trial-companion-user-milestone-seen';
@@ -20,15 +20,16 @@ const savedObjectMappings: SavedObjectsType['mappings'] = {
       type: 'text',
     },
     milestoneIds: {
-      type: 'text',
+      type: 'integer',
     },
   },
 };
 
-export const dashboardSavedObject: SavedObjectsType<DashboardSavedObjectAttributes> = {
-  name: USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
-  indexPattern: SECURITY_SOLUTION_SAVED_OBJECT_INDEX,
-  hidden: false,
-  namespaceType: 'multiple-isolated',
-  mappings: savedObjectMappings,
-};
+export const userMilestoneSeenSavedObject: SavedObjectsType<UserMilestoneSeenSavedObjectAttributes> =
+  {
+    name: USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
+    indexPattern: SECURITY_SOLUTION_SAVED_OBJECT_INDEX,
+    hidden: false,
+    namespaceType: 'multiple-isolated',
+    mappings: savedObjectMappings,
+  };
