@@ -4,11 +4,11 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import type { Logger, IRouter, LogMeta } from '@kbn/core/server';
+import type { Logger, IRouter } from '@kbn/core/server';
 import { z } from '@kbn/zod';
-import { isNonEmptyString, buildRouteValidationWithZod } from '@kbn/zod-helpers';
-import type { ITelemetryReceiver } from '../../telemetry/receiver';
-import { POST_LAUNCH_TASK } from '../../../../common/trial_companion/constants';
+import { isNonEmptyString } from '@kbn/zod-helpers';
+import { GET_TELEMETRY_ARTIFACT as GET_TELEMETRY_ARTIFACTS } from '../../../../common/trial_companion/constants';
+import type { TrialCompanionService } from '../services/trial_companion_service.types';
 
 export type NonEmptyString = z.infer<typeof NonEmptyString>;
 export const NonEmptyString = z.string().min(1).superRefine(isNonEmptyString);
@@ -18,17 +18,16 @@ export const PostLaunchTaskRequestQuery = z.object({
   name: NonEmptyString,
 });
 
-// TODO: not meant to be merged
-export const registerLaunchTaskRoute = (
+export const registerGetTelemetryArtifactRoute = (
   router: IRouter,
   logger: Logger,
-  receiver?: ITelemetryReceiver
+  trialCompanionService?: TrialCompanionService
 ) => {
-  const log = logger.get('launch-task');
+  const log = logger.get('telemetry-artifact');
 
-  router.post(
+  router.get(
     {
-      path: POST_LAUNCH_TASK,
+      path: GET_TELEMETRY_ARTIFACTS,
       security: {
         authz: {
           requiredPrivileges: ['securitySolution'],
@@ -39,21 +38,15 @@ export const registerLaunchTaskRoute = (
         access: 'public',
         summary: 'Trigger a telemetry task (for testing purposes)',
       },
-      validate: {
-        query: buildRouteValidationWithZod(PostLaunchTaskRequestQuery),
-      },
+      validate: false,
     },
-    async (_, request, response) => {
-      const name = request.query.name;
+    async (_, _request, response) => {
+      log.info('Running get telemetry artifact task');
 
-      log.info('Launching task', { event: { name } } as LogMeta);
-
-      await receiver?.launchTask(name);
-
+      const result = await trialCompanionService?.listTelemetryArtifacs();
       return response.ok({
         body: {
-          task: name,
-          message: 'Task launched',
+          artifacts: result,
         },
       });
     }

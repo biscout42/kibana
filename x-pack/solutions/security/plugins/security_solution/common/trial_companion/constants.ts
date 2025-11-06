@@ -8,4 +8,6 @@
 export const GET_TRIAL_COMPANION_MESSAGE =
   '/internal/security_solution/trial_companion/notification';
 
-export const LAUNCH_TASK = '/internal/security_solution/launch-task';
+export const POST_LAUNCH_TASK = '/internal/security_solution/launch-task';
+
+export const GET_TELEMETRY_ARTIFACT = '/internal/security_solution/telemetry-artifacts';
