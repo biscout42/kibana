@@ -919,7 +919,6 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.logger.warn('Task Manager not available, health diagnostic task not started.');
     }
 
-    this.trialCompanionMilestoneService.start(core.savedObjects);
     return {};
   }
 
