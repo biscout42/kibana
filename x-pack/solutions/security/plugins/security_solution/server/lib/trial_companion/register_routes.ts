@@ -13,6 +13,7 @@ import type { ITelemetryReceiver } from '../telemetry/receiver';
 import { registerGetTelemetryArtifactRoute } from './routes/get_telemetry_artifact';
 import type { TrialCompanionTelemetryService } from './services/trial_companion_telemetry_service.types';
 import type { TrialCompanionMilestoneRegistryService } from './types';
+import { registerSeenNotificationRoute } from './routes/seen_notification';
 
 export const registerTrialCompanionRoutes = (
   router: SecuritySolutionPluginRouter,
@@ -23,6 +24,7 @@ export const registerTrialCompanionRoutes = (
   trialCompanionTelemetryService?: TrialCompanionTelemetryService
 ) => {
   registerGetNotificationRoute(router, logger, trialCompanionMilestoneRegistryService);
+  registerSeenNotificationRoute(router, logger, trialCompanionMilestoneRegistryService);
   registerLaunchTaskRoute(router, logger, receiver);
   registerGetTelemetryArtifactRoute(router, logger, trialCompanionTelemetryService);
 };

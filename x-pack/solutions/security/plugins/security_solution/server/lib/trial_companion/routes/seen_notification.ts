@@ -4,41 +4,47 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
+
+import { schema } from '@kbn/config-schema';
 import type { Logger } from '@kbn/core/server';
-import { transformError } from '@kbn/securitysolution-es-utils';
 import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
-import { TrialCompanionUserNotificationServiceImpl } from '../services/trial_companion_user_notification_service';
-import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
+import { transformError } from '@kbn/securitysolution-es-utils';
 import type { SecuritySolutionPluginRouter } from '../../../types';
 import type {
   TrialCompanionMilestoneRegistryService,
   TrialCompanionUserNotificationService,
 } from '../types';
+import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
+import { TrialCompanionUserNotificationServiceImpl } from '../services/trial_companion_user_notification_service';
 
-export const registerGetNotificationRoute = (
+export const registerSeenNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
   trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
 ) => {
-  router.get(
+  router.post(
     {
       path: GET_TRIAL_COMPANION_MESSAGE,
       options: {
         access: 'internal',
       },
-      validate: false,
+      validate: {
+        body: schema.object({
+          milestoneId: schema.number(),
+        }),
+      },
       security: {
         authz: {
           requiredPrivileges: ['securitySolution'],
         },
       },
     },
-    async (context, _request, response) => {
+    async (context, request, response) => {
       const siemResponse = buildSiemResponse(response);
+      const { milestoneId } = request.body;
       try {
-        logger.info('Get Trial Companion Notification route called');
+        logger.info('Post Trial Companion Notification route called');
 
-        // TODO: dry with post
         const core = await context.core;
         const soClient = core.savedObjects.client;
         const service: TrialCompanionUserNotificationService =
@@ -57,18 +63,10 @@ export const registerGetNotificationRoute = (
             body: 'User not found',
           });
         }
-
-        const milestone = await service.currentMilestone(user.username);
-
-        return response.ok({
-          body: {
-            message: milestone.milestone?.message,
-            shouldShow: milestone.shouldShow,
-            milestoneId: milestone.milestone?.id,
-          },
-        });
+        await service.notificationSeen(milestoneId, user.username);
+        return response.ok({});
       } catch (err) {
-        logger.error(`Get Trial Companion Notification route: Caught error: ${err}`);
+        logger.error(`Post Trial Companion Notification route: Caught error: ${err}`);
         const error = transformError(err);
         return siemResponse.error({
           body: error.message,
