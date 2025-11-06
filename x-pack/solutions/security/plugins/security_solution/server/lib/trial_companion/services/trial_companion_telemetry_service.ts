@@ -25,7 +25,7 @@ import type {
   TrialCompanionTelemetryServiceStart,
 } from './trial_companion_telemetry_service.types';
 import { newTelemetryLogger } from '../../telemetry/helpers';
-import { telemetrySavedObjectType } from '../saved_object_mappings';
+import { telemetrySavedObjectType } from '../saved_objects';
 import { artifactService } from '../../telemetry/artifact';
 
 const TASK_TYPE = 'security:telemetry-trial-companion';

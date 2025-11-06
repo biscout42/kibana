@@ -6,3 +6,4 @@
  */
 
 export * from './telemetry';
+export * from './user_milestone_seen_saved_object';
