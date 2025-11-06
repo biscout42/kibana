@@ -11,6 +11,7 @@ import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
 } from '@kbn/task-manager-plugin/server';
+import type { TrialCompanionMilestoneRegistryService } from '../types';
 
 export interface TrialCompanionMilestoneServiceSetup {
   taskManager: TaskManagerSetupContract;
@@ -20,6 +21,7 @@ export interface TrialCompanionMilestoneServiceStart {
   taskManager: TaskManagerStartContract;
   packageService: PackageService;
   core: CoreStart;
+  registry: TrialCompanionMilestoneRegistryService;
 }
 
 export interface TrialCompanionMilestoneService {

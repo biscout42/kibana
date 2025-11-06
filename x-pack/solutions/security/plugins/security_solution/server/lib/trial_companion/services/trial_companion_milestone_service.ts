@@ -26,6 +26,7 @@ import type {
   TrialCompanionMilestoneServiceStart,
 } from './trial_companion_milestone_service.types';
 import { newTelemetryLogger } from '../../telemetry/helpers';
+import type { TrialCompanionMilestoneRegistryService } from '../types';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
@@ -67,6 +68,8 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
 
   private _esClient?: ElasticsearchClient;
 
+  private trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService;
+
   constructor(logger: Logger) {
     const mdc = { task_id: TASK_ID, task_type: TASK_TYPE };
     this.logger = newTelemetryLogger(logger.get('trial-companion-milestone-service'), mdc);
@@ -85,6 +88,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     this._soClient =
       start.core.savedObjects.createInternalRepository() as unknown as SavedObjectsClientContract;
     this.packageService = start.packageService;
+    this.trialCompanionMilestoneRegistryService = start.registry;
 
     await this.scheduleTask(start.taskManager);
   }
@@ -288,8 +292,24 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
         maxAttempts: 1,
         createTaskRunner: () => {
           return {
+            // TODO: better place and error handling
             run: async () => {
-              await this.detectMilestone();
+              const current = await this.detectMilestone();
+              this.logger.info(`Current milestone detected: ${current}`);
+              const saved = await this.trialCompanionMilestoneRegistryService.getCurrent();
+              this.logger.info(`Saved milestone detected: ${saved}`);
+              if (!saved) {
+                const result = await this.trialCompanionMilestoneRegistryService.create(
+                  current[0],
+                  current[1]
+                );
+                this.logger.info(`Saved new milestone: ${result}`);
+              } else {
+                saved.id = current[0];
+                saved.message = current[1];
+                const result = await this.trialCompanionMilestoneRegistryService.save(saved);
+                this.logger.info(`Updated existing milestone : ${result}`);
+              }
             },
 
             cancel: async () => {

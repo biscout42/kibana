@@ -7,9 +7,9 @@
 
 import type {
   Logger,
+  SavedObject,
   SavedObjectsClientContract,
   SavedObjectsServiceStart,
-  SavedObjectsFindResult,
 } from '@kbn/core/server';
 import { MILESTONE_SAVED_OBJECT_TYPE } from '../saved_objects/milestone_saved_object';
 import type {
@@ -19,9 +19,7 @@ import type {
 } from '../types';
 import type { MilestoneSavedObjectAttributes } from '../saved_objects/milestone_saved_object';
 
-function toMilestone(
-  result: SavedObjectsFindResult<MilestoneSavedObjectAttributes>
-): TrialCompanionMilestone {
+function toMilestone(result: SavedObject<MilestoneSavedObjectAttributes>): TrialCompanionMilestone {
   return {
     id: result.attributes.milestoneId as MilestoneID,
     message: result.attributes.message,
@@ -76,5 +74,17 @@ export class TrialCompanionMilestoneRegistryServiceImpl
       throw Error('saved objects client is unavailable');
     }
     return this.soClient;
+  }
+
+  async create(id: MilestoneID, message: string): Promise<TrialCompanionMilestone> {
+    const response = await this.savedObjectsClient().create<MilestoneSavedObjectAttributes>(
+      MILESTONE_SAVED_OBJECT_TYPE,
+      {
+        milestoneId: id,
+        message,
+      }
+    );
+
+    return toMilestone(response);
   }
 }

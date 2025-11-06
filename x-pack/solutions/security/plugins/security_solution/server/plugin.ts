@@ -904,11 +904,13 @@ export class Plugin implements ISecuritySolutionPlugin {
           } as LogMeta);
         });
 
+      this.trialCompanionMilestoneRegistryService.start(core.savedObjects);
       this.trialCompanionMilestoneService
         .start({
           taskManager: plugins.taskManager,
           packageService,
           core,
+          registry: this.trialCompanionMilestoneRegistryService,
         })
         .catch((e) => {
           this.logger.warn('Error starting trial companion milestone service task', {
@@ -919,7 +921,6 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.logger.warn('Task Manager not available, health diagnostic task not started.');
     }
 
-    this.trialCompanionMilestoneService.start(core.savedObjects);
     return {};
   }
 

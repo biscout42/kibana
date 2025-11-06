@@ -27,6 +27,7 @@ export interface TrialCompanionUserNotification {
 
 export interface TrialCompanionMilestoneRegistryService {
   getCurrent(): Promise<TrialCompanionMilestone | undefined>;
+  create(id: MilestoneID, message: string): Promise<TrialCompanionMilestone>;
   save(milestone: TrialCompanionMilestone): Promise<void>;
   start(savedObjects: SavedObjectsServiceStart);
 }
