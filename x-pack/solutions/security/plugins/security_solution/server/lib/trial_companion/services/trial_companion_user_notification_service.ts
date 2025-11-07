@@ -24,8 +24,8 @@ export class TrialCompanionUserNotificationServiceImpl
   implements TrialCompanionUserNotificationService
 {
   private readonly logger: Logger;
-  private registry: TrialCompanionMilestoneRegistryService;
-  private soClient: SavedObjectsClientContract;
+  private _registry?: TrialCompanionMilestoneRegistryService;
+  private _soClient?: SavedObjectsClientContract;
   constructor(logger: Logger) {
     this.logger = logger;
   }
@@ -34,13 +34,13 @@ export class TrialCompanionUserNotificationServiceImpl
     savedObjects: SavedObjectsServiceStart,
     registry: TrialCompanionMilestoneRegistryService
   ): void {
-    this.registry = registry;
-    this.soClient =
+    this._registry = registry;
+    this._soClient =
       savedObjects.createInternalRepository() as unknown as SavedObjectsClientContract;
   }
 
   async currentMilestone(userId: string): Promise<TrialCompanionUserNotification> {
-    const milestone = await this.registry.getCurrent();
+    const milestone = await this.registry().getCurrent();
     const userStatus = await this.getUserMilestoneStatus(userId);
     let shouldShow;
     if (milestone) {
@@ -55,7 +55,7 @@ export class TrialCompanionUserNotificationServiceImpl
   private async getUserMilestoneStatus(
     userId: string
   ): Promise<SavedObject<UserMilestoneSeenSavedObjectAttributes> | undefined> {
-    const userStatusResponse = await this.soClient.find<UserMilestoneSeenSavedObjectAttributes>({
+    const userStatusResponse = await this.soClient().find<UserMilestoneSeenSavedObjectAttributes>({
       type: USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
       search: userId,
       searchFields: ['userId'],
@@ -69,14 +69,14 @@ export class TrialCompanionUserNotificationServiceImpl
 
     if (currentSO && current && !current.milestoneIds.includes(milestoneId)) {
       current.milestoneIds.push(milestoneId);
-      const response = await this.soClient.update<UserMilestoneSeenSavedObjectAttributes>(
+      const response = await this.soClient().update<UserMilestoneSeenSavedObjectAttributes>(
         USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
         currentSO.id,
         current
       );
       this.logger.info(`Updated user milestone seen SO: ${response}`);
     } else {
-      const response = await this.soClient.create<UserMilestoneSeenSavedObjectAttributes>(
+      const response = await this.soClient().create<UserMilestoneSeenSavedObjectAttributes>(
         USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
         {
           userId,
@@ -85,5 +85,19 @@ export class TrialCompanionUserNotificationServiceImpl
       );
       this.logger.info(`Created user milestone seen SO: ${response}`);
     }
+  }
+
+  private soClient(): SavedObjectsClientContract {
+    if (this._soClient === undefined || this._soClient === null) {
+      throw Error('saved objects client is unavailable');
+    }
+    return this._soClient;
+  }
+
+  private registry(): TrialCompanionMilestoneRegistryService {
+    if (this._registry === undefined || this._soClient === null) {
+      throw Error('registry service is unavailable');
+    }
+    return this._registry;
   }
 }
