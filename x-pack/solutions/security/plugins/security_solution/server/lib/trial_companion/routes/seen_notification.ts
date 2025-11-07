@@ -52,7 +52,7 @@ export const registerSeenNotificationRoute = (
             body: 'User not found',
           });
         }
-        await trialCompanionUserNotificationService.notificationSeen(milestoneId, user.username);
+        trialCompanionUserNotificationService.notificationSeen(milestoneId, user.username);
         return response.ok({});
       } catch (err) {
         logger.error(`Post Trial Companion Notification route: Caught error: ${err}`);
