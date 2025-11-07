@@ -6,6 +6,7 @@
  */
 
 import type { ElasticsearchClient, Logger, SavedObjectsClientContract } from '@kbn/core/server';
+import { isEqual } from 'lodash';
 import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
@@ -41,7 +42,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
 
   private _esClient?: ElasticsearchClient;
 
-  private trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService;
+  private _trialCompanionMilestoneRegistryService?: TrialCompanionMilestoneRegistryService;
 
   constructor(logger: Logger) {
     const mdc = { task_id: TASK_ID, task_type: TASK_TYPE };
@@ -62,7 +63,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     this._soClient =
       start.core.savedObjects.createInternalRepository() as unknown as SavedObjectsClientContract;
     this.packageService = start.packageService;
-    this.trialCompanionMilestoneRegistryService = start.registry;
+    this._trialCompanionMilestoneRegistryService = start.registry;
 
     await this.scheduleTask(start.taskManager);
   }
@@ -267,6 +268,55 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     }
   }
 
+  async refreshMilestones() {
+    this.logger.debug('about to refresh milestones in the saved objects store');
+
+    try {
+      const current = await this.detectMilestone();
+      this.logger.info(`Current milestone detected: ${current}`);
+
+      const saved = await this.trialCompanionMilestoneRegistryService().getCurrent();
+      this.logger.info(`Saved milestone detected: ${saved}`);
+
+      if (!saved) {
+        this.logger.debug('No previous milestone found, creating it');
+        const result = await this.trialCompanionMilestoneRegistryService().create(
+          current[0],
+          current[1],
+          current[2],
+          current[3]
+        );
+        this.logger.info(`Saved new milestone: ${result}`);
+      } else {
+        const savedObj = {
+          id: saved.id,
+          message: saved.message,
+          title: saved.title,
+          app: saved.app,
+        };
+        const currentObj = {
+          id: current[0],
+          message: current[1],
+          title: current[2],
+          app: current[3],
+        };
+        if (!isEqual(savedObj, currentObj)) {
+          this.logger.debug('Previous milestone found and it has changed, updating it');
+          saved.id = current[0];
+          saved.message = current[1];
+          saved.title = current[2];
+          saved.app = current[3];
+          const result = await this.trialCompanionMilestoneRegistryService().save(saved);
+          this.logger.info(`Updated existing milestone : ${result}`);
+        } else {
+          this.logger.debug('Previous milestone is the same as current, no update needed');
+        }
+      }
+    } catch (e) {
+      this.logger.error('Error refreshing milestones', e);
+    }
+  }
+
   private registerTask(taskManager: TaskManagerSetupContract) {
     this.logger.debug('About to register task');
 
@@ -277,29 +327,8 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
         maxAttempts: 1,
         createTaskRunner: () => {
           return {
-            // TODO: better place and error handling
             run: async () => {
-              const current = await this.detectMilestone();
-              this.logger.info(`Current milestone detected: ${current}`);
-              const saved = await this.trialCompanionMilestoneRegistryService.getCurrent();
-              this.logger.info(`Saved milestone detected: ${saved}`);
-              if (!saved) {
-                const result = await this.trialCompanionMilestoneRegistryService.create(
-                  current[0],
-                  current[1],
-                  current[2],
-                  current[3]
-                );
-                this.logger.info(`Saved new milestone: ${result}`);
-              } else {
-                saved.id = current[0];
-                saved.message = current[1];
-                saved.title = current[2];
-                saved.app = current[3];
-                // TODO: update only if changed
-                const result = await this.trialCompanionMilestoneRegistryService.save(saved);
-                this.logger.info(`Updated existing milestone : ${result}`);
-              }
+              await this.refreshMilestones();
             },
 
             cancel: async () => {
@@ -331,6 +360,13 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       throw Error('saved objects client is unavailable');
     }
     return this._soClient;
+  }
+
+  private trialCompanionMilestoneRegistryService(): TrialCompanionMilestoneRegistryService {
+    if (this._trialCompanionMilestoneRegistryService === undefined || this._esClient === null) {
+      throw Error('trial companion milestone service is unavailable');
+    }
+    return this._trialCompanionMilestoneRegistryService;
   }
 
   private esClient(): ElasticsearchClient {
