@@ -110,7 +110,7 @@ export class TrialCompanionTelemetryServiceImpl implements TrialCompanionTelemet
     } as LogMeta);
 
     try {
-      const artifactName = 'yeti-artifact-v1';
+      const artifactName = 'trial-companion-v1';
       const manifest = await artifactService.getArtifact(artifactName);
 
       if (manifest.notModified) {

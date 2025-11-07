@@ -14,6 +14,42 @@ export const telemetrySavedObjectMappings: SavedObjectsType['mappings'] = {
     cluster: {
       type: 'keyword',
     },
+    milestones: {
+      properties: {
+        step: {
+          type: 'text',
+          fields: {
+            keyword: {
+              type: 'keyword',
+            },
+          },
+        },
+        message: {
+          type: 'text',
+          fields: {
+            keyword: {
+              type: 'keyword',
+            },
+          },
+        },
+        title: {
+          type: 'text',
+          fields: {
+            keyword: {
+              type: 'keyword',
+            },
+          },
+        },
+        app: {
+          type: 'text',
+          fields: {
+            keyword: {
+              type: 'keyword',
+            },
+          },
+        },
+      },
+    },
   },
 };
 
