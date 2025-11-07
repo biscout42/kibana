@@ -78,9 +78,5 @@ export class TrialCompanionUserNotificationServiceImpl
       );
       this.logger.info(`Created user milestone seen SO: ${response}`);
     }
-
-    this.logger.info(
-      `TODO: implement method TrialCompanionUserNotificationService.notificationSeen`
-    );
   }
 }

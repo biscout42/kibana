@@ -30,6 +30,10 @@ export const userMilestoneSeenSavedObject: SavedObjectsType = {
   name: USER_MILESTONE_SEEN_SAVED_OBJECT_TYPE,
   indexPattern: SECURITY_SOLUTION_SAVED_OBJECT_INDEX,
   hidden: false,
-  namespaceType: 'multiple-isolated',
+  management: {
+    importableAndExportable: true,
+    visibleInManagement: true,
+  },
+  namespaceType: 'agnostic',
   mappings: savedObjectMappings,
 };

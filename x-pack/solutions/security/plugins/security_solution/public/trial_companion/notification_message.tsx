@@ -41,16 +41,16 @@ export const TrialNotificationMessage: React.FC<Props> = ({
         values={{ message }}
       />
       <EuiSpacer size="s" />
-      <EuiButton size="s" onClick={onSeenBanner} color="success" style={{ marginRight: '8px' }}>
-        <FormattedMessage
-          id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
-          defaultMessage="Dismiss"
-        />
-      </EuiButton>
-      <EuiButton size="s" onClick={onViewButton} color="success">
+      <EuiButton size="s" onClick={onViewButton} color="success" style={{ marginRight: '8px' }}>
         <FormattedMessage
           id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
           defaultMessage="View"
+        />
+      </EuiButton>
+      <EuiButton size="s" onClick={onSeenBanner} color="success">
+        <FormattedMessage
+          id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
+          defaultMessage="Don't show again"
         />
       </EuiButton>
     </EuiCallOut>

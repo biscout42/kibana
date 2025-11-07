@@ -50,8 +50,7 @@ export const TrialNotification: React.FC<Props> = () => {
     };
 
     const onViewButton = () => {
-      postMilestoneNotificationSeen(milestoneId);
-      removeBanner();
+      // onSeenBanner(); // possible, just an idea to keep the banner. Might be useful for a demo
       if (app) {
         startServices.application.navigateToApp(app);
       }

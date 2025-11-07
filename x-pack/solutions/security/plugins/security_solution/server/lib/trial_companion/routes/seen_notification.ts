@@ -46,7 +46,7 @@ export const registerSeenNotificationRoute = (
         logger.info('Post Trial Companion Notification route called');
 
         const core = await context.core;
-        const soClient = core.savedObjects.client;
+        const soClient = core.savedObjects.getClient();
         const service: TrialCompanionUserNotificationService =
           new TrialCompanionUserNotificationServiceImpl(
             logger,
