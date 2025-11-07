@@ -15,7 +15,6 @@ import type {
   UsageCollectionSetup,
 } from '@kbn/usage-collection-plugin/server';
 import type { PackageService } from '@kbn/fleet-plugin/server';
-import { i18n } from '@kbn/i18n';
 import type {
   TrialCompanionMilestoneService,
   TrialCompanionMilestoneServiceSetup,
@@ -23,102 +22,13 @@ import type {
 } from './trial_companion_milestone_service.types';
 import { newTelemetryLogger } from '../../telemetry/helpers';
 import type { TrialCompanionMilestoneRegistryService } from '../types';
+import { MILESTONE_STEPS } from '../../../../common/trial_companion/constants';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
 const TASK_ID = `${TASK_TYPE}:1.0.0`;
 const INTERVAL = '1m'; // testing purposes
 const TIMEOUT = '10m';
-
-/**
- * Milestone step numbers and their corresponding messages
- * These map to the milestone numbers in the Security Portal dashboard
- */
-export const ALL_MILESTONES_COMPLETE_MESSAGE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.allMilestonesCompleteMessage',
-  {
-    defaultMessage: 'Congratulations! You’ve completed all the steps to get started with Security.',
-  }
-);
-
-export const ALL_MILESTONES_COMPLETE_TITLE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.allMilestonesCompleteTitle',
-  {
-    defaultMessage: 'You’re all set!',
-  }
-);
-
-export const INSTALL_INTEGRATIONS_MESSAGE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.installIntegrationsMessage',
-  {
-    defaultMessage:
-      'Ready to connect your tools? Add integrations to see all your logs, metrics, and traces in one place.',
-  }
-);
-
-export const INSTALL_INTEGRATIONS_TITLE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.installIntegrationsTitle',
-  {
-    defaultMessage: 'Add your data sources',
-  }
-);
-
-export const ENABLE_SECURITY_RULES_MESSAGE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.enableSecurityRulesMessage',
-  {
-    defaultMessage:
-      'Ready to enable security rules? You can add our recommendations or create your own.',
-  }
-);
-
-export const ENABLE_SECURITY_RULES_TITLE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.enableSecurityRulesTitle',
-  {
-    defaultMessage: 'Start detecting threats',
-  }
-);
-
-export const CREATE_ALERTS_MESSAGE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.createAlertsMessage',
-  {
-    defaultMessage:
-      'Generate a sample alert to see how your rules work and what happens when a threat is found.',
-  }
-);
-
-export const CREATE_ALERTS_TITLE = i18n.translate(
-  'xpack.securitySolution.trialCompanion.createAlertsTitle',
-  {
-    defaultMessage: 'See your rules in action',
-  }
-);
-
-export const MILESTONE_STEPS = {
-  ALL_MILESTONES_COMPLETE: {
-    step: -1,
-    message: ALL_MILESTONES_COMPLETE_MESSAGE,
-    title: ALL_MILESTONES_COMPLETE_TITLE,
-    app: '',
-  },
-  INSTALL_INTEGRATIONS: {
-    step: 3,
-    message: INSTALL_INTEGRATIONS_MESSAGE,
-    title: INSTALL_INTEGRATIONS_TITLE,
-    app: '/fleet/policies',
-  },
-  ENABLE_SECURITY_RULES: {
-    step: 6,
-    message: ENABLE_SECURITY_RULES_MESSAGE,
-    title: ENABLE_SECURITY_RULES_TITLE,
-    app: '/security/rules/management',
-  },
-  CREATE_ALERTS: {
-    step: 7,
-    message: CREATE_ALERTS_MESSAGE,
-    title: CREATE_ALERTS_TITLE,
-    app: '/security/alerts',
-  },
-} as const;
 
 export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilestoneService {
   private readonly logger: Logger;
