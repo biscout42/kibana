@@ -73,7 +73,7 @@ export const CREATE_ALERTS_MESSAGE = i18n.translate(
 export const CREATE_ALERTS_TITLE = i18n.translate(
   'xpack.securitySolution.trialCompanion.createAlertsTitle',
   {
-    defaultMessage: 'CSee your rules in action',
+    defaultMessage: 'See your rules in action',
   }
 );
 
