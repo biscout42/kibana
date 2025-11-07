@@ -10,17 +10,13 @@ import type { Logger } from '@kbn/core/server';
 import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
 import { transformError } from '@kbn/securitysolution-es-utils';
 import type { SecuritySolutionPluginRouter } from '../../../types';
-import type {
-  TrialCompanionMilestoneRegistryService,
-  TrialCompanionUserNotificationService,
-} from '../types';
+import type { TrialCompanionUserNotificationService } from '../types';
 import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
-import { TrialCompanionUserNotificationServiceImpl } from '../services/trial_companion_user_notification_service';
 
 export const registerSeenNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
-  trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
+  trialCompanionUserNotificationService: TrialCompanionUserNotificationService
 ) => {
   router.post(
     {
@@ -46,13 +42,6 @@ export const registerSeenNotificationRoute = (
         logger.info('Post Trial Companion Notification route called');
 
         const core = await context.core;
-        const soClient = core.savedObjects.getClient();
-        const service: TrialCompanionUserNotificationService =
-          new TrialCompanionUserNotificationServiceImpl(
-            logger,
-            trialCompanionMilestoneRegistryService,
-            soClient
-          );
 
         const currentUser = await core.userProfile.getCurrent();
         const user = currentUser?.user;
@@ -63,7 +52,7 @@ export const registerSeenNotificationRoute = (
             body: 'User not found',
           });
         }
-        await service.notificationSeen(milestoneId, user.username);
+        await trialCompanionUserNotificationService.notificationSeen(milestoneId, user.username);
         return response.ok({});
       } catch (err) {
         logger.error(`Post Trial Companion Notification route: Caught error: ${err}`);

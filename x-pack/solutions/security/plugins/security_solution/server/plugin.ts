@@ -151,7 +151,11 @@ import type { TrialCompanionTelemetryService } from './lib/trial_companion/servi
 import { TrialCompanionTelemetryServiceImpl } from './lib/trial_companion/services/trial_companion_telemetry_service';
 import type { TrialCompanionMilestoneService } from './lib/trial_companion/services/trial_companion_milestone_service.types';
 import { TrialCompanionMilestoneServiceImpl } from './lib/trial_companion/services/trial_companion_milestone_service';
-import type { TrialCompanionMilestoneRegistryService } from './lib/trial_companion/types';
+import type {
+  TrialCompanionMilestoneRegistryService,
+  TrialCompanionUserNotificationService,
+} from './lib/trial_companion/types';
+import { TrialCompanionUserNotificationServiceImpl } from './lib/trial_companion/services/trial_companion_user_notification_service';
 
 export type { SetupPlugins, StartPlugins, PluginSetup, PluginStart } from './plugin_contract';
 
@@ -173,6 +177,7 @@ export class Plugin implements ISecuritySolutionPlugin {
   private readonly trialCompanionTelemetryService: TrialCompanionTelemetryService;
   private readonly trialCompanionMilestoneService: TrialCompanionMilestoneService;
   private readonly trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService;
+  private readonly trialCompanionUserNotificationService: TrialCompanionUserNotificationService;
 
   private lists: ListPluginSetup | undefined; // TODO: can we create ListPluginStart?
   private licensing$!: Observable<ILicense>;
@@ -235,6 +240,9 @@ export class Plugin implements ISecuritySolutionPlugin {
     this.trialCompanionTelemetryService = new TrialCompanionTelemetryServiceImpl(this.logger);
     this.trialCompanionMilestoneService = new TrialCompanionMilestoneServiceImpl(this.logger);
     this.trialCompanionMilestoneRegistryService = new TrialCompanionMilestoneRegistryServiceImpl(
+      this.logger
+    );
+    this.trialCompanionUserNotificationService = new TrialCompanionUserNotificationServiceImpl(
       this.logger
     );
   }
@@ -467,9 +475,9 @@ export class Plugin implements ISecuritySolutionPlugin {
       this.isServerless,
       core.docLinks,
       this.endpointContext,
+      this.trialCompanionUserNotificationService,
       plugins.usageCollection,
-      this.trialCompanionTelemetryService,
-      this.trialCompanionMilestoneRegistryService
+      this.trialCompanionTelemetryService
     );
 
     registerEndpointRoutes(router, this.endpointContext);
@@ -906,6 +914,10 @@ export class Plugin implements ISecuritySolutionPlugin {
         });
 
       this.trialCompanionMilestoneRegistryService.start(core.savedObjects);
+      this.trialCompanionUserNotificationService.start(
+        core.savedObjects,
+        this.trialCompanionMilestoneRegistryService
+      );
 
       this.trialCompanionMilestoneService
         .start({

@@ -12,6 +12,10 @@ export type MilestoneID = number;
 export interface TrialCompanionUserNotificationService {
   notificationSeen(milestoneId: MilestoneID, userId: string): void;
   currentMilestone(userId: string): Promise<TrialCompanionUserNotification>;
+  start(
+    savedObjects: SavedObjectsServiceStart,
+    registry: TrialCompanionMilestoneRegistryService
+  ): void;
 }
 
 export interface TrialCompanionMilestone {

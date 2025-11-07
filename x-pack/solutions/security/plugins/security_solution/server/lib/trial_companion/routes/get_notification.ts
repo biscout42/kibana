@@ -7,18 +7,14 @@
 import type { Logger } from '@kbn/core/server';
 import { transformError } from '@kbn/securitysolution-es-utils';
 import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
-import { TrialCompanionUserNotificationServiceImpl } from '../services/trial_companion_user_notification_service';
 import { GET_TRIAL_COMPANION_MESSAGE } from '../../../../common/trial_companion/constants';
 import type { SecuritySolutionPluginRouter } from '../../../types';
-import type {
-  TrialCompanionMilestoneRegistryService,
-  TrialCompanionUserNotificationService,
-} from '../types';
+import type { TrialCompanionUserNotificationService } from '../types';
 
 export const registerGetNotificationRoute = (
   router: SecuritySolutionPluginRouter,
   logger: Logger,
-  trialCompanionMilestoneRegistryService: TrialCompanionMilestoneRegistryService
+  trialCompanionUserNotificationService: TrialCompanionUserNotificationService
 ) => {
   router.get(
     {
@@ -40,13 +36,6 @@ export const registerGetNotificationRoute = (
 
         // TODO: dry with post
         const core = await context.core;
-        const soClient = core.savedObjects.client;
-        const service: TrialCompanionUserNotificationService =
-          new TrialCompanionUserNotificationServiceImpl(
-            logger,
-            trialCompanionMilestoneRegistryService,
-            soClient
-          );
 
         const currentUser = await core.userProfile.getCurrent();
         const user = currentUser?.user;
@@ -58,7 +47,9 @@ export const registerGetNotificationRoute = (
           });
         }
 
-        const milestone = await service.currentMilestone(user.username);
+        const milestone = await trialCompanionUserNotificationService.currentMilestone(
+          user.username
+        );
 
         return response.ok({
           body: {
