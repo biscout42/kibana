@@ -113,7 +113,8 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       current.id === MILESTONE_STEPS.CREATE_ALERTS.step &&
       telemetryArtifacts.length > 0 &&
       telemetryArtifacts[0].milestones.length > 0 &&
-      telemetryArtifacts[0].milestones[0].step === MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step
+      (telemetryArtifacts[0].milestones[0].step === MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step ||
+        telemetryArtifacts[0].milestones[0].step === MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step)
     ) {
       return [
         MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step,
