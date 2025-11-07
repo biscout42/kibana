@@ -64,6 +64,7 @@ export const TrialNotification: React.FC<Props> = () => {
           onSeenBanner={onSeenBanner}
           title={title}
           onViewButton={onViewButton}
+          app={app}
         />,
         startServices
       );

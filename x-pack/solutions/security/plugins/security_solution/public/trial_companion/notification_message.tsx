@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { EuiButton, EuiCallOut, EuiSpacer } from '@elastic/eui';
+import { EuiButton, EuiCallOut, EuiLink, EuiSpacer } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   onSeenBanner: () => void;
   title: string;
   onViewButton: () => void;
+  app?: string;
 }
 
 export const TrialNotificationMessage: React.FC<Props> = ({
@@ -21,6 +22,7 @@ export const TrialNotificationMessage: React.FC<Props> = ({
   onSeenBanner,
   title,
   onViewButton,
+  app,
 }) => {
   return (
     <EuiCallOut
@@ -35,11 +37,32 @@ export const TrialNotificationMessage: React.FC<Props> = ({
         />
       }
     >
-      <FormattedMessage
-        id="xpack.securitySolution.trialNotifications.trialNotification.message"
-        defaultMessage="{message}"
-        values={{ message }}
-      />
+      <>
+        <FormattedMessage
+          id="xpack.securitySolution.trialNotifications.trialNotification.message"
+          defaultMessage="{message}"
+          values={{ message }}
+        />
+        {app && (
+          <>
+            {' '}
+            <FormattedMessage
+              id="xpack.securitySolution.trialNotifications.trialNotification.getStartedText"
+              defaultMessage="Get started "
+            />
+            <EuiLink onClick={onViewButton}>
+              <FormattedMessage
+                id="xpack.securitySolution.trialNotifications.trialNotification.getStartedLink"
+                defaultMessage="here"
+              />
+            </EuiLink>
+            <FormattedMessage
+              id="xpack.securitySolution.trialNotifications.trialNotification.getStartedPeriod"
+              defaultMessage="."
+            />
+          </>
+        )}
+      </>
       <EuiSpacer size="s" />
       <EuiButton size="s" onClick={onSeenBanner} color="success" style={{ marginRight: '8px' }}>
         <FormattedMessage
@@ -47,12 +70,14 @@ export const TrialNotificationMessage: React.FC<Props> = ({
           defaultMessage="Dismiss"
         />
       </EuiButton>
-      <EuiButton size="s" onClick={onViewButton} color="success">
-        <FormattedMessage
-          id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
-          defaultMessage="View"
-        />
-      </EuiButton>
+      {app && (
+        <EuiButton size="s" onClick={onViewButton} color="success">
+          <FormattedMessage
+            id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
+            defaultMessage="Go to app"
+          />
+        </EuiButton>
+      )}
     </EuiCallOut>
   );
 };
