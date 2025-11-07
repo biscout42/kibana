@@ -29,4 +29,12 @@ export interface TrialCompanionTelemetryService {
 
 export interface TrialCompanionArtifact {
   cluster: string;
+  milestones: TrialCompanionMilestoneArtifact[];
+}
+
+export interface TrialCompanionMilestoneArtifact {
+  step: number;
+  message: string;
+  title: string;
+  app: string;
 }

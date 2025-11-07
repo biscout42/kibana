@@ -24,6 +24,7 @@ import type {
 import { newTelemetryLogger } from '../../telemetry/helpers';
 import type { TrialCompanionMilestoneRegistryService } from '../types';
 import { MILESTONE_STEPS } from '../../../../common/trial_companion/constants';
+import type { TrialCompanionTelemetryService } from './trial_companion_telemetry_service.types';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
@@ -43,6 +44,8 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
   private _esClient?: ElasticsearchClient;
 
   private _trialCompanionMilestoneRegistryService?: TrialCompanionMilestoneRegistryService;
+
+  private _trialCompanionTelemetryService?: TrialCompanionTelemetryService;
 
   constructor(logger: Logger) {
     const mdc = { task_id: TASK_ID, task_type: TASK_TYPE };
@@ -64,6 +67,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       start.core.savedObjects.createInternalRepository() as unknown as SavedObjectsClientContract;
     this.packageService = start.packageService;
     this._trialCompanionMilestoneRegistryService = start.registry;
+    this._trialCompanionTelemetryService = start.telemetry;
 
     await this.scheduleTask(start.taskManager);
   }
@@ -102,7 +106,22 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     }
 
     const alertsCount = await this.verifyTotalAlertsCount(collectorContext);
-    if (alertsCount === 0) {
+    const current = await this.trialCompanionMilestoneRegistryService().getCurrent();
+    const telemetryArtifacts = await this.trialCompanionTelemetryService().listTelemetryArtifacs();
+    if (
+      current &&
+      current.id === MILESTONE_STEPS.CREATE_ALERTS.step &&
+      telemetryArtifacts.length > 0 &&
+      telemetryArtifacts[0].milestones.length > 0 &&
+      telemetryArtifacts[0].milestones[0].step === MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step
+    ) {
+      return [
+        MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.step,
+        MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.message,
+        MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.title,
+        MILESTONE_STEPS.ALL_MILESTONES_COMPLETE.app,
+      ];
+    } else if (alertsCount === 0) {
       this.logger.info(`Advising user to take step ${MILESTONE_STEPS.CREATE_ALERTS.step}`);
       return [
         MILESTONE_STEPS.CREATE_ALERTS.step,
@@ -367,6 +386,13 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       throw Error('trial companion milestone service is unavailable');
     }
     return this._trialCompanionMilestoneRegistryService;
+  }
+
+  private trialCompanionTelemetryService(): TrialCompanionTelemetryService {
+    if (this._trialCompanionTelemetryService === undefined || this._esClient === null) {
+      throw Error('trial companion milestone service is unavailable');
+    }
+    return this._trialCompanionTelemetryService;
   }
 
   private esClient(): ElasticsearchClient {

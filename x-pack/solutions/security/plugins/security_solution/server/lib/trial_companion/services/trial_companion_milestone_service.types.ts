@@ -13,10 +13,11 @@ import type {
 } from '@kbn/task-manager-plugin/server';
 import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
 import type { TrialCompanionMilestoneRegistryService } from '../types';
+import type { TrialCompanionTelemetryService } from './trial_companion_telemetry_service.types';
 
 export interface TrialCompanionMilestoneServiceSetup {
   taskManager: TaskManagerSetupContract;
-  usageCollection: UsageCollectionSetup;
+  usageCollection?: UsageCollectionSetup;
 }
 
 export interface TrialCompanionMilestoneServiceStart {
@@ -24,6 +25,7 @@ export interface TrialCompanionMilestoneServiceStart {
   packageService: PackageService;
   core: CoreStart;
   registry: TrialCompanionMilestoneRegistryService;
+  telemetry: TrialCompanionTelemetryService;
 }
 
 export interface TrialCompanionMilestoneService {

@@ -925,6 +925,7 @@ export class Plugin implements ISecuritySolutionPlugin {
           packageService,
           core,
           registry: this.trialCompanionMilestoneRegistryService,
+          telemetry: this.trialCompanionTelemetryService,
         })
         .catch((e) => {
           this.logger.warn(`Error starting trial companion milestone service task: ${e}`, {
