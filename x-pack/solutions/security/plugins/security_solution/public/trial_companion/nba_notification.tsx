@@ -17,24 +17,37 @@ interface Props {
   onViewButton: () => void;
 }
 export const NBANotification: React.FC<Props> = ({ milestoneId, onSeenBanner, onViewButton }) => {
+  const nba = ALL_NBA.get(milestoneId);
+  if (!nba) {
+    window.console.warn('No NBA found for milestoneId:', milestoneId);
+    return null;
+  }
+
+  const title = nba?.title;
+  const message = nba?.message;
+  const apps = nba?.app;
+
+  window.console.log('Rendering NBA Notification for milestoneId:', milestoneId, title);
+
   return (
     <EuiCallOut
       announceOnMount
       iconType="cheer"
+      onDismiss={onSeenBanner}
       title={
         <FormattedMessage
           id="xpack.securitySolution.trialNotifications.trialNotification.title"
           defaultMessage="{title}"
-          values={{ title: ALL_NBA[milestoneId].title }}
+          values={{ title }}
         />
       }
     >
       <FormattedMessage
         id="xpack.securitySolution.trialNotifications.trialNotification.message"
         defaultMessage="{message}"
-        values={{ message: ALL_NBA[milestoneId].message }}
+        values={{ message }}
       />
-      {ALL_NBA[milestoneId].app && (
+      {apps && (
         <EuiButton size="s" onClick={onViewButton} color="success" style={{ marginRight: '8px' }}>
           <FormattedMessage
             id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
@@ -42,12 +55,6 @@ export const NBANotification: React.FC<Props> = ({ milestoneId, onSeenBanner, on
           />
         </EuiButton>
       )}
-      <EuiButton size="s" onClick={onSeenBanner} color="success">
-        <FormattedMessage
-          id="xpack.securitySolution.trialNotifications.trialNotification.dismissButton"
-          defaultMessage="Don't show again"
-        />
-      </EuiButton>
     </EuiCallOut>
   );
 };

@@ -5,12 +5,16 @@
  * 2.0.
  */
 
-import type { Logger } from '@kbn/core/server';
+import type { KibanaRequest, KibanaResponseFactory, Logger } from '@kbn/core/server';
 import { transformError } from '@kbn/securitysolution-es-utils';
 import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
+import { schema } from '@kbn/config-schema';
 import { TRIAL_COMPANION_NBA_URL } from '../../../../common/trial_companion/constants';
 import { Milestones } from '../../../../common/trial_companion/types';
-import type { SecuritySolutionPluginRouter } from '../../../types';
+import type {
+  SecuritySolutionPluginRouter,
+  SecuritySolutionRequestHandlerContext,
+} from '../../../types';
 
 export const registerGetNBARoute = (router: SecuritySolutionPluginRouter, logger: Logger) => {
   router.versioned
@@ -73,65 +77,87 @@ export const registerPostNBAActionRoute = (
   // TODO: TBD - use TRIAL_COMPANION_NBA_ACTION_URL
 };
 
-const postNBAUserSeen = (
-  logger: Logger
-): ((context, request, response) => Promise<IKibanaResponse>) => {
-  const siemResponse = buildSiemResponse(response);
-  const { milestoneId } = request.body;
-  try {
-    logger.info(`POST Trial Companion NBA seen route called. milestoneId: ${milestoneId}`);
-    const core = await context.core;
+const postNBAUserSeen =
+  (
+    logger: Logger
+  ): ((
+    context: SecuritySolutionRequestHandlerContext,
+    request: KibanaRequest,
+    response: KibanaResponseFactory
+  ) => Promise<IKibanaResponse>) =>
+  async (context, request, response) => {
+    const siemResponse = buildSiemResponse(response);
+    const { milestoneId } = request.body;
+    try {
+      logger.info(`POST Trial Companion NBA seen route called. milestoneId: ${milestoneId}`);
+      const core = await context.core;
 
-    const currentUser = await core.userProfile.getCurrent();
-    const user = currentUser?.user;
-    logger.info(`User data. Username: ${user?.username}, uid: ${currentUser?.uid}`);
+      const currentUser = await core.userProfile.getCurrent();
+      const user = currentUser?.user;
+      logger.info(`User data. Username: ${user?.username}, uid: ${currentUser?.uid}`);
 
-    if (!user) {
-      return response.notFound({
-        body: 'User not found',
+      if (!user) {
+        return response.notFound({
+          body: 'User not found',
+        });
+      }
+
+      return response.ok({});
+    } catch (err) {
+      logger.error(`Post Trial Companion NBA seen route: Caught error: ${err}`);
+      const error = transformError(err);
+      return siemResponse.error({
+        body: error.message,
+        statusCode: error.statusCode,
       });
     }
+  };
 
-    return response.ok({});
-  } catch (err) {
-    logger.error(`Post Trial Companion NBA seen route: Caught error: ${err}`);
-    const error = transformError(err);
-    return siemResponse.error({
-      body: error.message,
-      statusCode: error.statusCode,
-    });
-  }
-};
+const getCurrentNBAForUser =
+  (
+    logger: Logger
+  ): ((
+    context: SecuritySolutionRequestHandlerContext,
+    request: KibanaRequest,
+    response: KibanaResponseFactory
+  ) => Promise<IKibanaResponse>) =>
+  async (context, request, response) => {
+    const siemResponse = buildSiemResponse(response);
+    try {
+      logger.info('Get Trial Companion NBA route called');
+      const core = await context.core; // TODO: DRY
 
-const getCurrentNBAForUser = (
-  logger: Logger
-): ((context, request, response) => Promise<IKibanaResponse>) => {
-  const siemResponse = buildSiemResponse(response);
-  try {
-    logger.info('Get Trial Companion NBA route called');
-    const core = await context.core; // TODO: DRY
+      const currentUser = await core.userProfile.getCurrent();
+      const user = currentUser?.user;
+      logger.info(
+        `User data. Username: ${user?.username}, uid: ${
+          currentUser?.uid
+        }. Profile: ${JSON.stringify(user?.roles)}`
+      );
 
-    const currentUser = await core.userProfile.getCurrent();
-    const user = currentUser?.user;
-    logger.info(`User data. Username: ${user?.username}, uid: ${currentUser?.uid}`);
+      if (!user) {
+        return response.notFound({
+          body: 'User not found',
+        });
+      }
 
-    if (!user) {
-      return response.notFound({
-        body: 'User not found',
+      if (!user.roles?.includes('admin')) {
+        // TODO: just an experiment
+        return response.ok({});
+      }
+
+      return response.ok({
+        // TODO: should I use @kbn/zod and more types to common/api/trial_companion? Why?
+        body: {
+          milestoneId: Milestones.M7,
+        },
+      });
+    } catch (err) {
+      logger.error(`Get Trial Companion Notification route: Caught error: ${err}`);
+      const error = transformError(err);
+      return siemResponse.error({
+        body: error.message,
+        statusCode: error.statusCode,
       });
     }
-    return response.ok({
-      // TODO: should I use @kbn/zod and more types to common/api/trial_companion? Why?
-      body: {
-        milestoneId: Milestones.M7,
-      },
-    });
-  } catch (err) {
-    logger.error(`Get Trial Companion Notification route: Caught error: ${err}`);
-    const error = transformError(err);
-    return siemResponse.error({
-      body: error.message,
-      statusCode: error.statusCode,
-    });
-  }
-};
+  };

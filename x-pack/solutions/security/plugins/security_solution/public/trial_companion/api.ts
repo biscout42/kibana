@@ -7,17 +7,19 @@
 
 import type { MilestoneID } from '../../common/trial_companion/types';
 import { TRIAL_COMPANION_NBA_URL } from '../../common/trial_companion/constants';
+import { KibanaServices } from '../common/lib/kibana';
 
 export interface GetNBAResponse {
   milestoneId?: MilestoneID;
 }
 
 export const getNBA = async (): Promise<GetNBAResponse> => {
-  return KibanaServices.get().http.get<GetNBAResponse>(TRIAL_COMPANION_NBA_URL);
+  return KibanaServices.get().http.get<GetNBAResponse>(TRIAL_COMPANION_NBA_URL, { version: '1' });
 };
 
 export const postNBAUserSeen = async (milestoneId: MilestoneID): Promise<void> => {
   return KibanaServices.get().http.post<void>(TRIAL_COMPANION_NBA_URL, {
+    version: '1',
     body: JSON.stringify({
       milestoneId,
     }),

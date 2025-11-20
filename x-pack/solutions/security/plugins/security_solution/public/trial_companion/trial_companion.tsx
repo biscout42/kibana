@@ -10,6 +10,7 @@ import useInterval from 'react-use/lib/useInterval';
 import type { MutableRefObject } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
+import type { OverlayStart } from '@kbn/core-overlays-browser';
 import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
@@ -31,11 +32,13 @@ export const TrialCompanion: React.FC<Props> = () => {
     setCount((c) => c + 1);
   }, 30000); // TODO: constant
 
+  // TODO: if error - do not show anything?
+
   useEffect(() => {
-    window.console.log('running effect on change:', message, shouldShow);
+    window.console.log('running effect on change:', milestoneId, loading);
     const onSeenBanner = () => {
       postNBAUserSeen(milestoneId);
-      removeBanner(bannerId)();
+      removeBanner(bannerId, overlays)();
     };
 
     const onViewButton = () => {
@@ -53,10 +56,10 @@ export const TrialCompanion: React.FC<Props> = () => {
         />,
         startServices
       );
-      window.console.log('mounted banner with id:', bannerId.current, message, bannerId.current);
+      window.console.log('mounted banner with id:', bannerId.current, milestoneId);
       bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
     } else if (bannerId.current && !milestoneId && !loading) {
-      removeBanner();
+      removeBanner(bannerId, overlays);
     } // else do nothing, keep the banner shown
   }, [overlays, startServices, milestoneId, loading]);
 
@@ -64,7 +67,10 @@ export const TrialCompanion: React.FC<Props> = () => {
   return null;
 };
 
-const removeBanner = (bannerId: MutableRefObject<string | undefined>): (() => void) => {
+const removeBanner = (
+  bannerId: MutableRefObject<string | undefined>,
+  overlays: OverlayStart
+): (() => void) => {
   window.console.log('remove banner with id:', bannerId.current);
   if (bannerId.current) {
     overlays.banners.remove(bannerId.current);

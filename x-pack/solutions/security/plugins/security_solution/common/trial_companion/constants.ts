@@ -7,6 +7,7 @@
 
 import { i18n } from '@kbn/i18n';
 import type { MilestoneID, NBA } from './types';
+import { Milestones } from './types';
 
 export const TRIAL_COMPANION_NBA_URL = '/internal/security_solution/trial_companion/nba';
 export const TRIAL_COMPANION_NBA_ACTION_URL =
@@ -30,9 +31,12 @@ export const ALL_NBA_COMPLETE_TITLE = i18n.translate(
   }
 );
 
-export const ALL_NBA: Record<MilestoneID, NBA> = {
-  M7: {
-    message: ALL_NBA_COMPLETE_MESSAGE,
-    title: ALL_NBA_COMPLETE_TITLE,
-  },
-};
+export const ALL_NBA = new Map<MilestoneID, NBA>([
+  [
+    Milestones.M7,
+    {
+      message: ALL_NBA_COMPLETE_MESSAGE,
+      title: ALL_NBA_COMPLETE_TITLE,
+    },
+  ],
+]);
