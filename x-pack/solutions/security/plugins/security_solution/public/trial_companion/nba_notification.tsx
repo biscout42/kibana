@@ -25,7 +25,7 @@ export const NBANotification: React.FC<Props> = ({ milestoneId, onSeenBanner, on
 
   const title = nba?.title;
   const message = nba?.message;
-  const apps = nba?.app;
+  const apps = nba?.apps;
 
   window.console.log('Rendering NBA Notification for milestoneId:', milestoneId, title);
 
