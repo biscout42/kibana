@@ -109,7 +109,7 @@ const getCurrentNBAForUser = (
   const siemResponse = buildSiemResponse(response);
   try {
     logger.info('Get Trial Companion NBA route called');
-    const core = await context.core;
+    const core = await context.core; // TODO: DRY
 
     const currentUser = await core.userProfile.getCurrent();
     const user = currentUser?.user;

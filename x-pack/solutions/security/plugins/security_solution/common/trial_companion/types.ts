@@ -20,5 +20,5 @@ export type MilestoneID = keyof typeof Milestones;
 export interface NBA {
   message: string;
   title: string;
-  app: string[] | undefined;
+  app: string[] | undefined; // TODO: for two apps - how-to pass text to the buttons?
 }
