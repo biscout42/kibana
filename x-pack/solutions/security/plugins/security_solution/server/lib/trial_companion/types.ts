@@ -5,4 +5,10 @@
  * 2.0.
  */
 
-export type MilestoneID = number;
+import type { Logger } from '@kbn/core/server';
+import type { SecuritySolutionPluginRouter } from '../../types';
+
+export interface TrialCompanionRoutesDeps {
+  router: SecuritySolutionPluginRouter;
+  logger: Logger;
+}
