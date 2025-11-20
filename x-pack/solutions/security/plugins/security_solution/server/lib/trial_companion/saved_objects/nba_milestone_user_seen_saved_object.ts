@@ -7,7 +7,7 @@
 
 import type { SavedObjectsType } from '@kbn/core/server';
 import { SECURITY_SOLUTION_SAVED_OBJECT_INDEX } from '@kbn/core-saved-objects-server';
-import type { MilestoneID } from '../types';
+import type { MilestoneID } from '../../../../common/trial_companion/types';
 
 export interface NBAUserSeenSavedObjectAttributes {
   userId: string;

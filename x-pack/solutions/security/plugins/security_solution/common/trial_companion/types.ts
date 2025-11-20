@@ -5,10 +5,20 @@
  * 2.0.
  */
 
-import type { Logger } from '@kbn/core/server';
-import type { SecuritySolutionPluginRouter } from '../../types';
+export enum Milestones {
+  M1 = 1,
+  M2,
+  M3,
+  M4,
+  M5,
+  M6,
+  M7,
+}
 
-export interface TrialCompanionRoutesDeps {
-  router: SecuritySolutionPluginRouter;
-  logger: Logger;
+export type MilestoneID = keyof typeof Milestones;
+
+export interface NBA {
+  message: string;
+  title: string;
+  app: string[] | undefined;
 }
