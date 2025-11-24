@@ -7,8 +7,14 @@
 
 import type { Logger } from '@kbn/core/server';
 import type { SecuritySolutionPluginRouter } from '../../types';
+import type { MilestoneID } from '../../../common/trial_companion/types';
 
 export interface TrialCompanionRoutesDeps {
   router: SecuritySolutionPluginRouter;
   logger: Logger;
+}
+
+export interface NBAMilestone {
+  milestoneId: MilestoneID;
+  savedObjectId: string;
 }

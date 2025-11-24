@@ -10,6 +10,7 @@ import type {
   TaskManagerStartContract,
 } from '@kbn/task-manager-plugin/server';
 import type { PackageService } from '@kbn/fleet-plugin/server';
+import type { SavedObjectsServiceStart } from '@kbn/core-saved-objects-server';
 import type { MilestoneID } from '../../../../common/trial_companion/types';
 
 export interface TrialCompanionMilestoneServiceSetup {
@@ -19,9 +20,10 @@ export interface TrialCompanionMilestoneServiceSetup {
 export interface TrialCompanionMilestoneServiceStart {
   taskManager: TaskManagerStartContract;
   packageService: PackageService;
+  savedObjects: SavedObjectsServiceStart;
 }
 
-type DetectorF = () => Promise<MilestoneID | undefined>;
+export type DetectorF = () => Promise<MilestoneID | undefined>;
 
 export interface TrialCompanionMilestoneService {
   setup(setup: TrialCompanionMilestoneServiceSetup): void;
