@@ -5,10 +5,12 @@
  * 2.0.
  */
 
-import type { CoreSetup, Logger } from '@kbn/core/server';
+import type { CoreSetup, Logger, SavedObjectsType } from '@kbn/core/server';
 
 import { promptType } from '@kbn/security-ai-prompts';
 import type { EncryptedSavedObjectsPluginSetup } from '@kbn/encrypted-saved-objects-plugin/server';
+import { scriptsLibrarySavedObjectType } from './endpoint/lib/scripts_library';
+import type { ExperimentalFeatures } from '../common';
 import {
   trialCompanionNBASavedObject,
   trialCompanionNBAUserSeenSavedObject,
@@ -31,6 +33,13 @@ import {
   PrivilegeMonitoringApiKeyEncryptionParams,
   PrivilegeMonitoringApiKeyType,
 } from './lib/entity_analytics/privilege_monitoring/auth/saved_object';
+
+// Conditional Saved Object Types
+// Saved object types that will only be registered if the associated feature flag is enabled
+const typesTiedToFeatureFlags: Array<{
+  feature: keyof ExperimentalFeatures;
+  soType: SavedObjectsType;
+}> = [{ feature: 'responseActionsScriptLibraryManagement', soType: scriptsLibrarySavedObjectType }];
 
 const types = [
   noteType,
@@ -70,8 +79,27 @@ export const timelineSavedObjectTypes = [timelineType.name, pinnedEventType.name
 
 export const notesSavedObjectTypes = [noteType.name];
 
-export const initSavedObjects = (savedObjects: CoreSetup['savedObjects']) => {
-  types.forEach((type) => savedObjects.registerType(type));
+export const initSavedObjects = (
+  savedObjects: CoreSetup['savedObjects'],
+  experimentalFeatures: ExperimentalFeatures,
+  logger: Logger
+) => {
+  types.forEach((type) => {
+    logger.debug(`Registering SavedObject type [${type.name}]`);
+    savedObjects.registerType(type);
+  });
+
+  typesTiedToFeatureFlags.forEach(({ feature, soType }) => {
+    if (!experimentalFeatures[feature]) {
+      logger.debug(
+        `Skipping the registration of SavedObject type [${soType.name}] - feature flag not enabled`
+      );
+      return;
+    }
+
+    logger.debug(`Registering SavedObject type [${soType.name}]`);
+    savedObjects.registerType(soType);
+  });
 };
 
 export const initEncryptedSavedObjects = ({
