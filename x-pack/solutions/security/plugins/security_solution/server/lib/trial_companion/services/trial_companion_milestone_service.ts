@@ -32,14 +32,13 @@ const TIMEOUT = '10m';
 
 export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilestoneService {
   private readonly logger: Logger;
-  private readonly repo: TrialCompanionMilestoneRepository;
+  private repo?: TrialCompanionMilestoneRepository | null;
 
   private detectors: DetectorF[] = [];
 
   constructor(logger: Logger) {
     const mdc = { task_id: TASK_ID, task_type: TASK_TYPE };
     this.logger = newTelemetryLogger(logger.get('trial-companion-milestone-service'), mdc);
-    this.repo = new TrialCompanionMilestoneRepositoryImpl(this.logger);
   }
 
   public setup(setup: TrialCompanionMilestoneServiceSetup) {
@@ -50,21 +49,33 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
   public async start(start: TrialCompanionMilestoneServiceStart) {
     this.logger.debug('Starting health diagnostic service');
     this.detectors.push(installedPackages(this.logger, start.packageService), allSet(this.logger)); // TODO: add more detectors here, order matters
-    this.repo.start(start.savedObjects);
+    this.repo = new TrialCompanionMilestoneRepositoryImpl(
+      this.logger,
+      start.savedObjects.createInternalRepository()
+    );
     await this.scheduleTask(start.taskManager);
+  }
+
+  private getMilestoneRepository(): TrialCompanionMilestoneRepository {
+    if (this.repo === undefined || this.repo === null) {
+      throw Error(
+        'TrialCompanionMilestoneRepository is unavailable. Make sure that start() has been called.'
+      );
+    }
+    return this.repo;
   }
 
   async refreshMilestones() {
     this.logger.debug('about to refresh milestones in the saved objects store');
     try {
-      const saved = await this.repo.getCurrent();
+      const saved = await this.getMilestoneRepository().getCurrent();
       this.logger.info(`Current milestone from SO: ${JSON.stringify(saved)}`);
 
       let currentMilestoneId: MilestoneID | undefined;
       // TODO: potential optimization: stop checking once we reach the final milestone, we could check SO in start function
       // TODO: potential optimization: run only detectors for milestones higher than the current one
       for (const d of this.detectors) {
-        const milestoneId = await d.apply();
+        const milestoneId = await d();
         if (milestoneId) {
           currentMilestoneId = milestoneId;
           break;
@@ -77,10 +88,10 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       if (currentMilestoneId) {
         if (!saved) {
           this.logger.debug('No previous milestone found, creating it');
-          updated = await this.repo.create(currentMilestoneId);
+          updated = await this.getMilestoneRepository().create(currentMilestoneId);
         } else if (saved.milestoneId !== currentMilestoneId) {
           saved.milestoneId = currentMilestoneId;
-          await this.repo.update(saved);
+          await this.getMilestoneRepository().update(saved);
           updated = saved;
         }
       }

@@ -5,7 +5,6 @@
  * 2.0.
  */
 
-import type { SavedObjectsServiceStart } from '@kbn/core-saved-objects-server';
 import type { ISavedObjectsRepository } from '@kbn/core-saved-objects-api-server';
 import type { MilestoneID } from '../../../../common/trial_companion/types';
 import type { NBAMilestone } from '../types';
@@ -22,10 +21,11 @@ function toMilestone(result: SavedObject<NBASavedObjectAttributes>): NBAMileston
 
 export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMilestoneRepository {
   private readonly logger: Logger;
-  private soClient: ISavedObjectsRepository;
+  private readonly soClient: ISavedObjectsRepository;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, soClient: ISavedObjectsRepository) {
     this.logger = logger;
+    this.soClient = soClient;
   }
 
   async create(id: MilestoneID): Promise<NBAMilestone> {
@@ -59,9 +59,5 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
     this.logger.debug(
       `Saved milestone with id ${response.id} and milestoneId ${milestone.id}. Response: ${response}`
     );
-  }
-
-  start(savedObjects: SavedObjectsServiceStart): void {
-    this.soClient = savedObjects.createInternalRepository();
   }
 }

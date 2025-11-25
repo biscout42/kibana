@@ -12,5 +12,4 @@ export interface TrialCompanionMilestoneRepository {
   getCurrent(): Promise<NBAMilestone | undefined>;
   create(id: MilestoneID): Promise<NBAMilestone>;
   update(milestone: NBAMilestone): Promise<void>;
-  start(savedObjects: SavedObjectsServiceStart): void;
 }
