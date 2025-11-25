@@ -11,7 +11,8 @@ import { TrialCompanionMilestoneRepositoryImpl } from './trial_companion_milesto
 import type { MilestoneID } from '../../../../common/trial_companion/types';
 import type { TrialCompanionUserNBAService } from './trial_companion_user_nba_service.types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
-import { Milestones } from '../../../../common/trial_companion/types';
+import type { NBAUserSeenSavedObjectAttributes } from '../saved_objects';
+import { NBA_USER_SEEN_SAVED_OBJECT_TYPE } from '../saved_objects';
 
 export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBAService {
   private readonly logger: Logger;
@@ -24,14 +25,52 @@ export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBASe
     this.repo = new TrialCompanionMilestoneRepositoryImpl(logger, soClient);
   }
 
-  // TODO: implement
-  public async markAsSeen(milestoneId: MilestoneID, userId: string): void {
-    this.logger.info(`markAsSeen called for user ${userId} and milestone ${milestoneId}`);
+  public async markAsSeen(milestoneId: MilestoneID, userId: string): Promise<void> {
+    const currentSO = await this.getUserNBAStatus(userId);
+    const current = currentSO?.attributes;
+
+    if (currentSO && current && !current.milestoneIds.includes(milestoneId)) {
+      current.milestoneIds.push(milestoneId);
+      const response = await this.soClient.update<NBAUserSeenSavedObjectAttributes>(
+        NBA_USER_SEEN_SAVED_OBJECT_TYPE,
+        currentSO.id,
+        current
+      );
+      this.logger.info(`Updated user milestone seen SO: ${response}`);
+    } else {
+      const response = await this.soClient.create<NBAUserSeenSavedObjectAttributes>(
+        NBA_USER_SEEN_SAVED_OBJECT_TYPE,
+        {
+          userId,
+          milestoneIds: [milestoneId],
+        }
+      );
+      this.logger.info(`Created user milestone seen SO: ${response}`);
+    }
   }
 
-  // TODO: implement
   public async nextNBA(userId: string): Promise<MilestoneID | undefined> {
-    this.logger.info(`nextNBA called for user ${userId}`);
-    return Promise.resolve(Milestones.M1);
+    const milestone = await this.repo.getCurrent();
+    const userStatus = await this.getUserNBAStatus(userId);
+
+    if (
+      !milestone ||
+      (userStatus && userStatus.attributes.milestoneIds.includes(milestone.milestoneId))
+    ) {
+      return undefined;
+    }
+
+    return milestone.milestoneId;
+  }
+
+  private async getUserNBAStatus(
+    userId: string
+  ): Promise<SavedObject<NBAUserSeenSavedObjectAttributes> | undefined> {
+    const result = await this.soClient.find<NBAUserSeenSavedObjectAttributes>({
+      type: NBA_USER_SEEN_SAVED_OBJECT_TYPE,
+      search: userId,
+      searchFields: ['userId'],
+    });
+    return result.saved_objects[0];
   }
 }

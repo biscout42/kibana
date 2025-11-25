@@ -8,6 +8,6 @@
 import type { MilestoneID } from '../../../../common/trial_companion/types';
 
 export interface TrialCompanionUserNBAService {
-  markAsSeen(milestoneId: MilestoneID, userId: string): void;
+  markAsSeen(milestoneId: MilestoneID, userId: string): Promise<void>;
   nextNBA(userId: string): Promise<MilestoneID | undefined>;
 }
