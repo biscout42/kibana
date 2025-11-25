@@ -19,7 +19,7 @@ export type MilestoneID = keyof typeof Milestones;
 
 export interface NBAAction {
   app: string;
-  test: string;
+  text: string;
 }
 
 export interface NBA {

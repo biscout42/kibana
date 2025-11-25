@@ -52,12 +52,14 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
       NBA_SAVED_OBJECT_TYPE,
       milestone.savedObjectId,
       {
-        milestoneId: milestone.id,
+        milestoneId: milestone.milestoneId,
       }
     );
 
-    this.logger.debug(
-      `Saved milestone with id ${response.id} and milestoneId ${milestone.id}. Response: ${response}`
+    this.logger.info(
+      `Saved milestone with id ${response.id} and milestoneId ${
+        milestone.milestoneId
+      }. Response: ${JSON.stringify(response)}`
     );
   }
 }

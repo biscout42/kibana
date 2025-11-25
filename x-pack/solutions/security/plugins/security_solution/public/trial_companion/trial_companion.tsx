@@ -13,6 +13,8 @@ import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
 import { postNBAUserSeen } from './api';
+import { ALL_NBA } from '../../common/trial_companion/constants';
+import type { MilestoneID, NBA, NBAAction } from '../../common/trial_companion/types';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 interface Props {}
@@ -21,6 +23,7 @@ export const TrialCompanion: React.FC<Props> = () => {
   const { overlays, ...startServices } = useKibana().services;
   const bannerId = useRef<string | undefined>();
   const [count, setCount] = useState(0);
+  const [previousMilestone, setPreviousMilestone] = useState<MilestoneID | undefined>(undefined);
 
   const { value, error, loading } = useGetNBA([count]);
   window.console.log('TrialNotification useGetNotification:', error, loading, value); // TODO: remove
@@ -47,27 +50,42 @@ export const TrialCompanion: React.FC<Props> = () => {
       removeBanner();
     };
 
-    const onViewButton = () => {
-      if (app) {
-        startServices.application.navigateToApp(app);
+    if (!loading && milestoneId && (!bannerId.current || milestoneId !== previousMilestone)) {
+      const nba: NBA = ALL_NBA.get(milestoneId);
+      window.console.log(`nba: ${JSON.stringify(nba)}`);
+      if (!nba) {
+        window.console.warn('No NBA found for milestoneId:', milestoneId);
+        return;
       }
-    };
 
-    if (milestoneId && !bannerId.current) {
-      const mount = toMountPoint(
+      let onViewButton: () => void | undefined;
+      let viewButtonText: string | undefined;
+
+      if (nba.apps && nba.apps.length > 0) {
+        const nbaAction: NBAAction = nba.apps[0];
+        onViewButton = () => {
+          startServices.application.navigateToApp(nbaAction.app);
+        };
+        viewButtonText = nbaAction.text;
+      }
+
+      const component = (
         <NBANotification
-          milestoneId={milestoneId}
+          title={nba.title}
+          message={nba.message}
+          viewButtonText={viewButtonText}
           onSeenBanner={onSeenBanner}
           onViewButton={onViewButton}
-        />,
-        startServices
+        />
       );
+      const mount = toMountPoint(component, startServices);
       window.console.log('mounted banner with id:', bannerId.current, milestoneId);
       bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
+      setPreviousMilestone(milestoneId);
     } else if (bannerId.current && !milestoneId && !loading) {
       removeBanner();
     } // else do nothing, keep the banner shown
-  }, [overlays, startServices, milestoneId, loading]);
+  }, [overlays, startServices, milestoneId, loading, previousMilestone]);
 
   useEffect(() => {
     return () => {

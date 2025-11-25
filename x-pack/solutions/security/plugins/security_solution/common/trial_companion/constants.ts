@@ -23,18 +23,18 @@ function translateNBA(milestone: MilestoneID, message, suffix: string) {
   });
 }
 
-function toNBA(milestoneId: MilestoneID, message, title: string, actions?: NBAAction[]) {
+function toNBA(milestoneId: MilestoneID, message, title: string, actions?: NBAAction[]): NBA {
   const apps: NBAAction[] | undefined = actions?.map((a) => {
     return {
       app: a.app,
-      test: translateNBA(milestoneId, a.test, SUFFIX_ACTION),
-    };
+      text: translateNBA(milestoneId, a.text, SUFFIX_ACTION),
+    } as NBAAction;
   });
   return {
     message: translateNBA(milestoneId, message, SUFFIX_MESSAGE),
     title: translateNBA(milestoneId, title, SUFFIX_TITLE),
     apps,
-  };
+  } as NBA;
 }
 
 const NBA_M1: NBA = toNBA(
@@ -44,7 +44,7 @@ const NBA_M1: NBA = toNBA(
   [
     {
       app: '/fleet/policies',
-      test: 'Add data from integrations',
+      text: 'Add data from integrations',
     },
   ]
 );
@@ -56,7 +56,7 @@ const NBA_M2: NBA = toNBA(
   [
     {
       app: '/discover#',
-      test: 'Go to Discover',
+      text: 'Go to Discover',
     },
   ]
 );
@@ -68,7 +68,7 @@ const NBA_M3: NBA = toNBA(
   [
     {
       app: '/security/rules/management',
-      test: 'View Detection Rules',
+      text: 'View Detection Rules',
     },
   ]
 );
@@ -80,7 +80,7 @@ const NBA_M4: NBA = toNBA(
   [
     {
       app: '/management/security/users',
-      test: 'Invite a teammate',
+      text: 'Invite a teammate',
     },
   ]
 );
@@ -92,7 +92,7 @@ const NBA_M5: NBA = toNBA(
   [
     {
       app: '/security/attack_discovery',
-      test: 'Try Attack Discovery',
+      text: 'Try Attack Discovery',
     },
   ]
 ); // TODO: Try Attack Discovery - it is flayout
@@ -104,7 +104,7 @@ const NBA_M6: NBA = toNBA(
   [
     {
       app: '/security/cases',
-      test: 'Create Case',
+      text: 'Create Case',
     },
   ]
 );

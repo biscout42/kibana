@@ -73,9 +73,11 @@ export const registerPostNBASeenRoute = (router: SecuritySolutionPluginRouter, l
       {
         version: '1',
         validate: {
-          body: schema.object({
-            milestoneId: schema.number(),
-          }),
+          request: {
+            body: schema.object({
+              milestoneId: schema.number(), // TODO: oneOf plus iterate over ALL_NBA keys
+            }),
+          },
         },
       },
       postNBAUserSeen(logger)
@@ -101,9 +103,13 @@ const postNBAUserSeen =
     const siemResponse = buildSiemResponse(response);
     const { milestoneId } = request.body;
     try {
-      logger.info(`POST Trial Companion NBA seen route called. milestoneId: ${milestoneId}`);
+      logger.info(
+        `POST Trial Companion NBA seen route called. milestoneId: ${milestoneId}, body: ${JSON.stringify(
+          request.body
+        )}`
+      );
 
-      const nbaContextOrResponse: Either<IKibanaResponse, NBAContext> = await getNBAService(
+      const nbaContextOrResponse: Either<IKibanaResponse, NBAContext> = await getNBAContext(
         logger,
         context,
         response
@@ -141,7 +147,7 @@ const getCurrentNBAForUser =
 
     try {
       logger.info('Get Trial Companion NBA route called');
-      const nbaContextOrResponse: Either<IKibanaResponse, NBAContext> = await getNBAService(
+      const nbaContextOrResponse: Either<IKibanaResponse, NBAContext> = await getNBAContext(
         logger,
         context,
         response
@@ -173,7 +179,7 @@ const getCurrentNBAForUser =
     }
   };
 
-async function getNBAService(
+async function getNBAContext(
   logger: Logger,
   context: SecuritySolutionRequestHandlerContext,
   response: KibanaResponseFactory
