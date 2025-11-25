@@ -6,28 +6,24 @@
  */
 
 import React from 'react';
-import { EuiButton, EuiCallOut } from '@elastic/eui';
+import { EuiButton, EuiCallOut, EuiSpacer } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
-import type { MilestoneID } from '../../common/trial_companion/types';
-import { ALL_NBA } from '../../common/trial_companion/constants';
 
 interface Props {
-  milestoneId: MilestoneID;
+  title: string;
+  message: string;
+  viewButtonText: string | undefined;
   onSeenBanner: () => void;
-  onViewButton: () => void;
+  onViewButton: () => void | undefined;
 }
-export const NBANotification: React.FC<Props> = ({ milestoneId, onSeenBanner, onViewButton }) => {
-  const nba = ALL_NBA.get(milestoneId);
-  if (!nba) {
-    window.console.warn('No NBA found for milestoneId:', milestoneId);
-    return null;
-  }
-
-  const title = nba?.title;
-  const message = nba?.message;
-  const apps = nba?.app;
-
-  window.console.log('Rendering NBA Notification for milestoneId:', milestoneId, title);
+export const NBANotification: React.FC<Props> = ({
+  title,
+  message,
+  viewButtonText,
+  onSeenBanner,
+  onViewButton,
+}) => {
+  window.console.log('Rendering NBA Notification:', title, message, viewButtonText);
 
   return (
     <EuiCallOut
@@ -47,11 +43,13 @@ export const NBANotification: React.FC<Props> = ({ milestoneId, onSeenBanner, on
         defaultMessage="{message}"
         values={{ message }}
       />
-      {apps && (
+      <EuiSpacer size="s" />
+      {onViewButton && viewButtonText && (
         <EuiButton size="s" onClick={onViewButton} color="success" style={{ marginRight: '8px' }}>
           <FormattedMessage
             id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
-            defaultMessage="Go to app"
+            defaultMessage="{viewButtonText}"
+            values={{ viewButtonText }}
           />
         </EuiButton>
       )}

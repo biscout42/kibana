@@ -7,13 +7,10 @@
 
 import type { SavedObjectsType } from '@kbn/core/server';
 import { SECURITY_SOLUTION_SAVED_OBJECT_INDEX } from '@kbn/core-saved-objects-server';
-import type { MilestoneID } from '../types';
+import type { MilestoneID } from '../../../../common/trial_companion/types';
 
 export interface NBASavedObjectAttributes {
   milestoneId: MilestoneID;
-  message: string;
-  title: string;
-  app: string[];
 }
 
 export const NBA_SAVED_OBJECT_TYPE = 'trial-companion-nba-milestone';
@@ -22,15 +19,6 @@ const savedObjectMappings: SavedObjectsType['mappings'] = {
   properties: {
     milestoneId: {
       type: 'integer',
-    },
-    message: {
-      type: 'text',
-    },
-    title: {
-      type: 'text',
-    },
-    app: {
-      type: 'text',
     },
   },
 };

@@ -18,10 +18,11 @@ export const getNBA = async (): Promise<GetNBAResponse> => {
 };
 
 export const postNBAUserSeen = async (milestoneId: MilestoneID): Promise<void> => {
+  const body = {
+    milestoneId,
+  };
   return KibanaServices.get().http.post<void>(TRIAL_COMPANION_NBA_URL, {
     version: '1',
-    body: JSON.stringify({
-      milestoneId,
-    }),
+    body: JSON.stringify(body),
   });
 };

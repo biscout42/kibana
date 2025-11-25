@@ -17,8 +17,13 @@ export enum Milestones {
 
 export type MilestoneID = keyof typeof Milestones;
 
+export interface NBAAction {
+  app: string;
+  text: string;
+}
+
 export interface NBA {
   message: string;
   title: string;
-  app: string[] | undefined; // TODO: for two apps - how-to pass text to the buttons?
+  apps: NBAAction[] | undefined; // TODO: for two apps - how-to pass text to the buttons?
 }
