@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import type { ISavedObjectsRepository } from '@kbn/core-saved-objects-api-server';
+import type { SavedObjectsClientContract } from '@kbn/core-saved-objects-api-server';
 import type { MilestoneID } from '../../../../common/trial_companion/types';
 import type { NBAMilestone } from '../types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
@@ -21,9 +21,9 @@ function toMilestone(result: SavedObject<NBASavedObjectAttributes>): NBAMileston
 
 export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMilestoneRepository {
   private readonly logger: Logger;
-  private readonly soClient: ISavedObjectsRepository;
+  private readonly soClient: SavedObjectsClientContract;
 
-  constructor(logger: Logger, soClient: ISavedObjectsRepository) {
+  constructor(logger: Logger, soClient: SavedObjectsClientContract) {
     this.logger = logger;
     this.soClient = soClient;
   }

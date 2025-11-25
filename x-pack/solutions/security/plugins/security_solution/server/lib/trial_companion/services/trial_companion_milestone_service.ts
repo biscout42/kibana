@@ -51,7 +51,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
     this.detectors.push(installedPackages(this.logger, start.packageService), allSet(this.logger)); // TODO: add more detectors here, order matters
     this.repo = new TrialCompanionMilestoneRepositoryImpl(
       this.logger,
-      start.savedObjects.createInternalRepository()
+      start.savedObjects.getUnsafeInternalClient()
     );
     await this.scheduleTask(start.taskManager);
   }

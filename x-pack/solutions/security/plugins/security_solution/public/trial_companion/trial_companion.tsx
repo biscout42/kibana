@@ -7,10 +7,8 @@
 
 import useInterval from 'react-use/lib/useInterval';
 
-import type { MutableRefObject } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
-import type { OverlayStart } from '@kbn/core-overlays-browser';
 import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
@@ -36,9 +34,17 @@ export const TrialCompanion: React.FC<Props> = () => {
 
   useEffect(() => {
     window.console.log('running effect on change:', milestoneId, loading);
+    const removeBanner = () => {
+      window.console.log('remove banner with id:', bannerId.current);
+      if (bannerId.current) {
+        overlays.banners.remove(bannerId.current);
+      }
+      bannerId.current = undefined;
+    };
+
     const onSeenBanner = () => {
       postNBAUserSeen(milestoneId);
-      removeBanner(bannerId, overlays)();
+      removeBanner();
     };
 
     const onViewButton = () => {
@@ -59,21 +65,18 @@ export const TrialCompanion: React.FC<Props> = () => {
       window.console.log('mounted banner with id:', bannerId.current, milestoneId);
       bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
     } else if (bannerId.current && !milestoneId && !loading) {
-      removeBanner(bannerId, overlays);
+      removeBanner();
     } // else do nothing, keep the banner shown
   }, [overlays, startServices, milestoneId, loading]);
 
-  useEffect(() => removeBanner(bannerId), [overlays]);
-  return null;
-};
+  useEffect(() => {
+    return () => {
+      if (bannerId.current) {
+        overlays.banners.remove(bannerId.current);
+      }
+      bannerId.current = undefined;
+    };
+  }, [overlays]);
 
-const removeBanner = (
-  bannerId: MutableRefObject<string | undefined>,
-  overlays: OverlayStart
-): (() => void) => {
-  window.console.log('remove banner with id:', bannerId.current);
-  if (bannerId.current) {
-    overlays.banners.remove(bannerId.current);
-  }
-  bannerId.current = undefined;
+  return null;
 };
