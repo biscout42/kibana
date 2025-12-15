@@ -141,15 +141,18 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       if (currentMilestoneId) {
         if (!saved) {
           this.logger.debug('No previous milestone found, creating it');
+          // TODO: TC - analytics.reportEvent
           updated = await this.getMilestoneRepository().create(currentMilestoneId);
         } else if (saved.milestoneId !== currentMilestoneId) {
           saved.milestoneId = currentMilestoneId;
+          // TODO: TC - analytics.reportEvent
           await this.getMilestoneRepository().update(saved);
           updated = saved;
         }
       }
       this.logger.debug(() => `Current milestone updated: ${JSON.stringify(updated)}`);
     } catch (e) {
+      // TODO: TC - analytics.reportEvent ???
       this.logger.error(`Error refreshing milestones: ${e.message}`);
     }
   }

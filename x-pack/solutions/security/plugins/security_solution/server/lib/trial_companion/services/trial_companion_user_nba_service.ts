@@ -32,6 +32,7 @@ export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBASe
     if (currentSO && current) {
       if (!current.milestoneIds.includes(milestoneId)) {
         current.milestoneIds.push(milestoneId);
+        // TODO: TC - analytics.reportEvent ???
         const response = await this.soClient.update<NBAUserSeenSavedObjectAttributes>(
           NBA_USER_SEEN_SAVED_OBJECT_TYPE,
           currentSO.id,
@@ -42,6 +43,7 @@ export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBASe
         this.logger.debug(`User milestone seen SO already exists for user ${userId}`);
       }
     } else {
+      // TODO: TC - analytics.reportEvent ???
       const response = await this.soClient.create<NBAUserSeenSavedObjectAttributes>(
         NBA_USER_SEEN_SAVED_OBJECT_TYPE,
         {

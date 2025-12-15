@@ -1694,6 +1694,7 @@ export const GAP_DETECTED_EVENT: EventTypeOpts<{
   },
 };
 
+// TODO: TC - add EBT event here
 export const events = [
   DETECTION_RULE_UPGRADE_EVENT,
   DETECTION_RULE_BULK_UPGRADE_EVENT,
