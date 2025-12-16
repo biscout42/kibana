@@ -12,6 +12,9 @@ import { TrialCompanionUserNBAServiceImpl } from './trial_companion_user_nba_ser
 import { loggingSystemMock } from '@kbn/core-logging-server-mocks';
 import { Milestone } from '../../../../common/trial_companion/types';
 import { NBA_SAVED_OBJECT_TYPE, NBA_USER_SEEN_SAVED_OBJECT_TYPE } from '../saved_objects';
+import type { AnalyticsServiceSetup } from '@kbn/core-analytics-browser';
+import { coreMock } from '@kbn/core/server/mocks';
+import { TRIAL_COMPANION_USER_SEEN_MILESTONE } from '../telemetry/trial_companion_ebt_events';
 
 const createSO = (attributes: unknown, type: string) => ({
   id: 'abc',
@@ -51,10 +54,18 @@ const createNBAUserSO = (
 
 describe('TrialCompanionUserNBAServiceImpl', () => {
   let soClient: jest.Mocked<SavedObjectsClientContract>;
+  let mockCore: ReturnType<typeof coreMock.createSetup>;
   let sut: TrialCompanionUserNBAService;
+  let mockTelemetry: jest.Mocked<AnalyticsServiceSetup>;
   beforeEach(() => {
+    mockCore = coreMock.createSetup();
     soClient = savedObjectsClientMock.create();
-    sut = new TrialCompanionUserNBAServiceImpl(loggingSystemMock.createLogger(), soClient);
+    mockTelemetry = mockCore.analytics;
+    sut = new TrialCompanionUserNBAServiceImpl(
+      loggingSystemMock.createLogger(),
+      soClient,
+      mockTelemetry
+    );
     jest.clearAllMocks();
   });
 
@@ -122,6 +133,10 @@ describe('TrialCompanionUserNBAServiceImpl', () => {
       });
       expect(actual).toBeUndefined();
       expect(soClient.update).not.toHaveBeenCalled();
+      expect(mockTelemetry.reportEvent).toHaveBeenCalledWith(
+        TRIAL_COMPANION_USER_SEEN_MILESTONE.eventType,
+        { milestoneIds: [2] }
+      );
     });
 
     it('should update existing user so', async () => {
@@ -134,6 +149,10 @@ describe('TrialCompanionUserNBAServiceImpl', () => {
       });
       expect(actual).toBeUndefined();
       expect(soClient.create).not.toHaveBeenCalled();
+      expect(mockTelemetry.reportEvent).toHaveBeenCalledWith(
+        TRIAL_COMPANION_USER_SEEN_MILESTONE.eventType,
+        { milestoneIds: [1, 2] }
+      );
     });
 
     it('should not update so if milestone already seen', async () => {

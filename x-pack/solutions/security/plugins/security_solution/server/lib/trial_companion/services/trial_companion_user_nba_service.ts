@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import type { Logger } from '@kbn/core/server';
+import type { AnalyticsServiceSetup, Logger } from '@kbn/core/server';
 import type { SavedObject, SavedObjectsClientContract } from '@kbn/core-saved-objects-api-server';
 import { TrialCompanionMilestoneRepositoryImpl } from './trial_companion_milestone_repository';
 import { Milestone } from '../../../../common/trial_companion/types';
@@ -13,16 +13,23 @@ import type { TrialCompanionUserNBAService } from './trial_companion_user_nba_se
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
 import type { NBAUserSeenSavedObjectAttributes } from '../saved_objects';
 import { NBA_USER_SEEN_SAVED_OBJECT_TYPE } from '../saved_objects';
+import { TRIAL_COMPANION_USER_SEEN_MILESTONE } from '../telemetry/trial_companion_ebt_events';
 
 export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBAService {
   private readonly logger: Logger;
   private readonly soClient: SavedObjectsClientContract;
   private readonly repo: TrialCompanionMilestoneRepository;
+  private readonly telemetry: AnalyticsServiceSetup;
 
-  constructor(logger: Logger, soClient: SavedObjectsClientContract) {
+  constructor(
+    logger: Logger,
+    soClient: SavedObjectsClientContract,
+    telemetry: AnalyticsServiceSetup
+  ) {
     this.logger = logger;
     this.soClient = soClient;
     this.repo = new TrialCompanionMilestoneRepositoryImpl(logger, soClient);
+    this.telemetry = telemetry;
   }
 
   public async markAsSeen(milestoneId: Milestone, userId: string): Promise<void> {
@@ -32,18 +39,19 @@ export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBASe
     if (currentSO && current) {
       if (!current.milestoneIds.includes(milestoneId)) {
         current.milestoneIds.push(milestoneId);
-        // TODO: TC - analytics.reportEvent ???
         const response = await this.soClient.update<NBAUserSeenSavedObjectAttributes>(
           NBA_USER_SEEN_SAVED_OBJECT_TYPE,
           currentSO.id,
           current
         );
+        this.telemetry.reportEvent(TRIAL_COMPANION_USER_SEEN_MILESTONE.eventType, {
+          milestoneIds: current.milestoneIds,
+        });
         this.logger.debug(`Updated user milestone seen SO: ${JSON.stringify(response)}`);
       } else {
         this.logger.debug(`User milestone seen SO already exists for user ${userId}`);
       }
     } else {
-      // TODO: TC - analytics.reportEvent ???
       const response = await this.soClient.create<NBAUserSeenSavedObjectAttributes>(
         NBA_USER_SEEN_SAVED_OBJECT_TYPE,
         {
@@ -51,6 +59,9 @@ export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBASe
           milestoneIds: [milestoneId],
         }
       );
+      this.telemetry.reportEvent(TRIAL_COMPANION_USER_SEEN_MILESTONE.eventType, {
+        milestoneIds: [milestoneId],
+      });
       this.logger.debug(`Created user milestone seen SO: ${JSON.stringify(response)}`);
     }
   }

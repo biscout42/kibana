@@ -138,6 +138,6 @@ async function fetchCollectorResults<T>(
     return result as T;
   } catch (error) {
     logger.error(`cases: Error fetching security solution telemetry: ${error}`);
-    return undefined;
+    throw error;
   }
 }

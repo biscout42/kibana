@@ -5,7 +5,12 @@
  * 2.0.
  */
 
-import type { ElasticsearchClient, Logger, SavedObjectsServiceStart } from '@kbn/core/server';
+import type {
+  AnalyticsServiceSetup,
+  ElasticsearchClient,
+  Logger,
+  SavedObjectsServiceStart,
+} from '@kbn/core/server';
 import type {
   RunContext,
   TaskManagerSetupContract,
@@ -16,6 +21,10 @@ import type {
   UsageCollectionSetup,
 } from '@kbn/usage-collection-plugin/server';
 import type { PackageService } from '@kbn/fleet-plugin/server';
+import {
+  TRIAL_COMPANION_DEPLOYMENT_MILESTONE,
+  TRIAL_COMPANION_MILESTONE_REFRESH_ERROR,
+} from '../telemetry/trial_companion_ebt_events';
 import type { UsageCollectorDeps } from './trial_companion_nba_detectors';
 import {
   savedDiscoverySessionsM2,
@@ -90,6 +99,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
   private readonly logger: Logger;
   private repo?: TrialCompanionMilestoneRepository | null;
   private enabled: boolean = false;
+  private telemetry?: AnalyticsServiceSetup | null;
 
   private detectors: DetectorF[] = [];
 
@@ -101,6 +111,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
   public setup(setup: TrialCompanionMilestoneServiceSetup) {
     this.logger.info(`Setting up TrialCompanionMilestoneService: ${setup.enabled}`);
     this.enabled = setup.enabled;
+    this.telemetry = setup.telemetry;
     this.registerTask(setup.taskManager);
   }
 
@@ -122,6 +133,13 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       );
     }
     return this.repo;
+  }
+
+  private getTelemetry(): AnalyticsServiceSetup {
+    if (this.telemetry === undefined || this.telemetry === null) {
+      throw Error('AnalyticsServiceSetup is unavailable. Make sure that start() has been called.');
+    }
+    return this.telemetry;
   }
 
   async refreshMilestones(abortSignal: AbortSignal) {
@@ -152,18 +170,24 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       if (currentMilestoneId) {
         if (!saved) {
           this.logger.debug('No previous milestone found, creating it');
-          // TODO: TC - analytics.reportEvent
           updated = await this.getMilestoneRepository().create(currentMilestoneId);
+          this.getTelemetry().reportEvent(TRIAL_COMPANION_DEPLOYMENT_MILESTONE.eventType, {
+            milestoneId: currentMilestoneId,
+          });
         } else if (saved.milestoneId !== currentMilestoneId) {
           saved.milestoneId = currentMilestoneId;
-          // TODO: TC - analytics.reportEvent
           await this.getMilestoneRepository().update(saved);
           updated = saved;
+          this.getTelemetry().reportEvent(TRIAL_COMPANION_DEPLOYMENT_MILESTONE.eventType, {
+            milestoneId: currentMilestoneId,
+          });
         }
       }
       this.logger.debug(() => `Current milestone updated: ${JSON.stringify(updated)}`);
     } catch (e) {
-      // TODO: TC - analytics.reportEvent ???
+      this.getTelemetry().reportEvent(TRIAL_COMPANION_MILESTONE_REFRESH_ERROR.eventType, {
+        message: e.message,
+      });
       this.logger.error(`Error refreshing milestones: ${e.message}`);
     }
   }

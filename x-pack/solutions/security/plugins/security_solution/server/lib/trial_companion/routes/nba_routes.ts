@@ -174,6 +174,7 @@ async function getNBAContext(
   response: KibanaResponseFactory
 ): Promise<Either<IKibanaResponse, NBAContext>> {
   const core = await context.core;
+  const securitySolution = await context.securitySolution;
   const currentUser = await core.userProfile.getCurrent();
   const user = currentUser?.user;
   if (!user) {
@@ -190,7 +191,8 @@ async function getNBAContext(
 
   const nbaService: TrialCompanionUserNBAService = new TrialCompanionUserNBAServiceImpl(
     logger,
-    core.savedObjects.getClient()
+    core.savedObjects.getClient(),
+    securitySolution.getAnalytics()
   );
   return right({
     nbaService,
