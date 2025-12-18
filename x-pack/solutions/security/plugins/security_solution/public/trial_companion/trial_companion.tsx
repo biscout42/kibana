@@ -9,6 +9,7 @@ import useInterval from 'react-use/lib/useInterval';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
+import { TrialCompanionEventTypes } from '../common/lib/telemetry/events/trial_companion/types';
 import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
@@ -72,6 +73,9 @@ const TrialCompanionImpl: React.FC<Props> = () => {
       if (nba.apps && nba.apps.length > 0) {
         const nbaAction: NBAAction = nba.apps[0];
         onViewButton = () => {
+          startServices.analytics?.reportEvent(TrialCompanionEventTypes.ViewButtonClicked, {
+            app: nbaAction.app,
+          });
           startServices.application.navigateToApp(nbaAction.app);
         };
         viewButtonText = nbaAction.text;

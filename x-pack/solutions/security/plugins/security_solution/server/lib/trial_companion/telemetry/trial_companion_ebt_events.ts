@@ -19,7 +19,7 @@ export const TRIAL_COMPANION_DEPLOYMENT_MILESTONE: EventTypeOpts<{ milestoneId: 
 };
 
 export const TRIAL_COMPANION_USER_SEEN_MILESTONE: EventTypeOpts<{ milestoneIds: number[] }> = {
-  eventType: 'trial_companion_deployment_milestone',
+  eventType: 'trial_companion_user_seen_milestone',
   schema: {
     milestoneIds: {
       type: 'array',

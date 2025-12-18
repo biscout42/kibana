@@ -55,6 +55,10 @@ import type {
   AIValueReportEventTypes,
   AIValueReportTelemetryEventsMap,
 } from './events/ai_value_report/types';
+import type {
+  TrialCompanionEventTypes,
+  TrialCompanionTelemetryEventsMap,
+} from './events/trial_companion/types';
 
 export * from './events/app/types';
 export * from './events/alerts_grouping/types';
@@ -102,6 +106,8 @@ export type TelemetryEventTypeData<T extends TelemetryEventTypes> = T extends Al
   ? RuleUpgradeTelemetryEventsMap[T]
   : T extends AIValueReportEventTypes
   ? AIValueReportTelemetryEventsMap[T]
+  : T extends TrialCompanionEventTypes
+  ? TrialCompanionTelemetryEventsMap[T]
   : never;
 
 export type TelemetryEventTypes =
@@ -119,4 +125,5 @@ export type TelemetryEventTypes =
   | SiemMigrationsRuleEventTypes
   | SiemMigrationsDashboardEventTypes
   | RuleUpgradeEventTypes
-  | AIValueReportEventTypes;
+  | AIValueReportEventTypes
+  | TrialCompanionEventTypes;
