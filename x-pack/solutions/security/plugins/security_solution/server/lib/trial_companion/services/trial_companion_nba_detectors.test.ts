@@ -136,34 +136,10 @@ describe('Trial companion NBA detectors', () => {
 
   describe('casesM6', () => {
     it.each([
-      [
-        '0 cases',
-        {
-          by_type: [{ type: 'cases', count: 0 }],
-        },
-        Milestone.M6,
-      ],
-      [
-        'no cases',
-        {
-          by_type: [{ type: 'foo', count: 0 }],
-        },
-        Milestone.M6,
-      ],
-      [
-        'with cases',
-        {
-          by_type: [
-            { type: 'foo', count: 1 },
-            { type: 'bar', count: 2 },
-            { type: 'cases', count: 3 },
-          ],
-        },
-        undefined,
-      ],
-      ['empty telemetry', {}, Milestone.M6],
-    ])('compares total count of cases saved objects - %s', async (_tcName, telemetry, expected) => {
-      (collector.fetch as jest.Mock).mockResolvedValue(telemetry);
+      ['0 cases', 0, Milestone.M6],
+      ['with cases', 3, undefined],
+    ])('compares total count of cases saved objects - %s', async (_tcName, total, expected) => {
+      soClient.find.mockResolvedValueOnce({ saved_objects: [], total, per_page: 0, page: 0 });
       await expect(casesM6(deps)()).resolves.toEqual(expected);
     });
 

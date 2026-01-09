@@ -51,12 +51,13 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
   usageCollection?: UsageCollectionSetup
 ) => {
   const soClient = savedObjects.getUnsafeInternalClient();
+  const detectorsLogger = logger.get('trial-companion-milestone-detectors');
 
   const detectors: DetectorF[] = [];
 
   const usageCollectorDeps: UsageCollectorDeps | undefined = usageCollection
     ? {
-        logger,
+        logger: detectorsLogger,
         collectorContext: {
           esClient,
           soClient,
@@ -66,7 +67,7 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
     : undefined;
 
   // order matters
-  detectors.push(installedPackagesM1(logger, packageService));
+  detectors.push(installedPackagesM1(detectorsLogger, packageService));
   if (usageCollectorDeps) {
     detectors.push(
       savedDiscoverySessionsM2(usageCollectorDeps),

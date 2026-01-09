@@ -93,16 +93,12 @@ export const detectionRulesInstalledM3 = (deps: UsageCollectorDeps): DetectorF =
 
 export const casesM6 = (deps: UsageCollectorDeps): DetectorF => {
   return async (): Promise<Milestone | undefined> => {
-    interface SavedObjectsCountsTelemetry {
-      by_type?: [{ type: string; count: number }];
-    }
-
-    const result = await fetchCollectorResults<SavedObjectsCountsTelemetry>(
-      'saved_objects_counts',
-      deps
-    );
-    const count = result?.by_type?.find((item) => item.type === CASE_SAVED_OBJECT)?.count ?? 0;
-    return count > 0 ? undefined : Milestone.M6;
+    const { total } = await deps.collectorContext.soClient.find({
+      type: CASE_SAVED_OBJECT,
+      perPage: 0,
+      page: 0,
+    });
+    return total > 0 ? undefined : Milestone.M6;
   };
 };
 
@@ -119,7 +115,6 @@ export const savedDiscoverySessionsM2 = (deps: UsageCollectorDeps): DetectorF =>
   };
 };
 
-// TODO: tests
 export const aiFeaturesM5 = (esClient: ElasticsearchClient): DetectorF => {
   return async (): Promise<Milestone | undefined> => {
     const attackDiscoveryResponse = await esClient.count({
