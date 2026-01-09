@@ -21,6 +21,7 @@ import {
   savedDiscoverySessionsM2,
   detectionRulesInstalledM3,
   installedPackagesM1,
+  aiFeaturesM5,
   casesM6,
 } from './trial_companion_nba_detectors';
 import { TrialCompanionMilestoneRepositoryImpl } from './trial_companion_milestone_repository';
@@ -70,6 +71,7 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
     detectors.push(
       savedDiscoverySessionsM2(usageCollectorDeps),
       detectionRulesInstalledM3(usageCollectorDeps),
+      aiFeaturesM5(esClient),
       casesM6(usageCollectorDeps)
     );
   }
