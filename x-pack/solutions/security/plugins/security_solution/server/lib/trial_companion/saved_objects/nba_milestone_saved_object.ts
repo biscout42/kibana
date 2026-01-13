@@ -12,7 +12,7 @@ import { schema } from '@kbn/config-schema';
 import type { Milestone } from '../../../../common/trial_companion/types';
 
 export interface NBASavedObjectAttributes {
-  milestoneId: Milestone;
+  milestoneIds: Milestone[];
 }
 
 export const NBA_SAVED_OBJECT_TYPE = 'trial-companion-nba-milestone';
@@ -26,7 +26,7 @@ const savedObjectMappings: SavedObjectsType['mappings'] = {
 };
 
 const TrialCompanionNBAAttributesSchemaV1 = schema.object({
-  milestoneId: schema.number(),
+  milestoneIds: schema.arrayOf(schema.number()),
 });
 
 const version1: SavedObjectsFullModelVersion = {

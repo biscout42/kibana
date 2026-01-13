@@ -15,9 +15,13 @@ export interface TrialCompanionRoutesDeps {
   enabled: boolean;
 }
 
+// TODO: make an array, based on new UX design
 export interface NBAMilestone {
   milestoneId: Milestone;
   savedObjectId: string;
 }
 
+// represent a get started milestone (NBA) to be done
 export type DetectorF = () => Promise<Milestone | undefined>;
+
+export type GetStartedTasks = (detectors: DetectorF[]) => Milestone[];

@@ -7,15 +7,19 @@
 
 import type { Logger } from '@kbn/core/server';
 import type { SavedObject, SavedObjectsClientContract } from '@kbn/core-saved-objects-api-server';
-import type { Milestone } from '../../../../common/trial_companion/types';
+import { Milestone } from '../../../../common/trial_companion/types';
 import type { NBAMilestone } from '../types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
 import type { NBASavedObjectAttributes } from '../saved_objects';
 import { NBA_SAVED_OBJECT_TYPE } from '../saved_objects';
 
 function toMilestone(result: SavedObject<NBASavedObjectAttributes>): NBAMilestone {
+  let soValue = result.attributes.milestoneIds[0];
+  if (!soValue) {
+    soValue = Milestone.M1;
+  }
   return {
-    milestoneId: result.attributes.milestoneId as Milestone,
+    milestoneId: soValue,
     savedObjectId: result.id,
   } as NBAMilestone;
 }
@@ -31,7 +35,7 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
 
   async create(id: Milestone): Promise<NBAMilestone> {
     const response = await this.soClient.create<NBASavedObjectAttributes>(NBA_SAVED_OBJECT_TYPE, {
-      milestoneId: id,
+      milestoneIds: [id],
     });
     return toMilestone(response);
   }
@@ -53,7 +57,7 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
       NBA_SAVED_OBJECT_TYPE,
       milestone.savedObjectId,
       {
-        milestoneId: milestone.milestoneId,
+        milestoneIds: [milestone.milestoneId],
       }
     );
 

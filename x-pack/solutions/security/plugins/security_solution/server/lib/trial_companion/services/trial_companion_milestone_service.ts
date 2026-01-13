@@ -33,7 +33,7 @@ import type {
 import { newTelemetryLogger } from '../../telemetry/helpers';
 import { Milestone } from '../../../../common/trial_companion/types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
-import type { NBAMilestone, DetectorF } from '../types';
+import type { NBAMilestone, DetectorF, GetStartedTasks } from '../types';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
@@ -84,6 +84,12 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
   );
 
   return { taskManager, detectors, repo };
+};
+
+export const getStartedTasksGreedy: GetStartedTasks = async (detectors: DetectorF[]) => {
+  const valuePromises = detectors.map((d) => d());
+  // as an alternative - we could do it sequentially and use abort controller after each of them
+  await Promise.all(valuePromises);
 };
 
 export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilestoneService {

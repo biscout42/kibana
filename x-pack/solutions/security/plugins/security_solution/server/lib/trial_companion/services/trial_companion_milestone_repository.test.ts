@@ -32,7 +32,7 @@ describe('TrialCompanionMilestoneRepositoryImpl', () => {
       soClient.create.mockResolvedValue({
         id: savedObjectId,
         type: NBA_SAVED_OBJECT_TYPE,
-        attributes: { milestoneId: 2 },
+        attributes: { milestoneIds: [2] },
         references: [],
       });
       const result = await repository.create(id);
@@ -40,7 +40,7 @@ describe('TrialCompanionMilestoneRepositoryImpl', () => {
         milestoneId: id,
         savedObjectId,
       });
-      expect(soClient.create).toHaveBeenCalledWith(NBA_SAVED_OBJECT_TYPE, { milestoneId: id });
+      expect(soClient.create).toHaveBeenCalledWith(NBA_SAVED_OBJECT_TYPE, { milestoneIds: [id] });
     });
 
     it('should propagate errors', async () => {
