@@ -19,6 +19,10 @@ export interface NBA {
   apps: NBAAction[] | undefined; // TODO: for two apps - how-to pass text to the buttons?
 }
 
+export interface NBATODOItem {
+  milestoneId: Milestone;
+  translate: NBA;
+}
 const SUFFIX_MESSAGE = 'message';
 const SUFFIX_TITLE = 'title';
 const SUFFIX_ACTION = 'action';
@@ -123,3 +127,11 @@ export const ALL_NBA = new Map<Milestone, NBA>([
   [Milestone.M5, NBA_M5],
   [Milestone.M6, NBA_M6],
 ]);
+
+export const NBA_TODO_LIST: NBATODOItem[] = [
+  { milestoneId: Milestone.M1, translate: NBA_M1 },
+  { milestoneId: Milestone.M2, translate: NBA_M2 },
+  { milestoneId: Milestone.M3, translate: NBA_M3 },
+  { milestoneId: Milestone.M5, translate: NBA_M5 },
+  { milestoneId: Milestone.M6, translate: NBA_M6 },
+];

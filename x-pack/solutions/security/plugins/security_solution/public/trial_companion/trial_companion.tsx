@@ -14,9 +14,9 @@ import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
 import { postNBAUserSeen } from './api';
-import { ALL_NBA } from './nba_translations';
 import type { NBA, NBAAction } from './nba_translations';
-import type { Milestone } from '../../common/trial_companion/types';
+import { NBA_TODO_LIST, ALL_NBA } from './nba_translations';
+import { Milestone } from '../../common/trial_companion/types';
 import { useIsExperimentalFeatureEnabled } from '../common/hooks/use_experimental_features';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -105,5 +105,10 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     };
   }, [overlays]);
 
-  return <YourTrialCompanion total={6} completed={2} />;
+  return (
+    <YourTrialCompanion
+      completed={[Milestone.M1, Milestone.M3, Milestone.M5]}
+      todoItems={NBA_TODO_LIST}
+    />
+  );
 };

@@ -13,43 +13,25 @@ import {
   EuiTitle,
   EuiAccordion,
   useGeneratedHtmlId,
-  EuiListGroup,
   useEuiTheme,
+  EuiIcon,
+  EuiSpacer,
+  EuiButton,
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
+import { useKibana } from '../common/lib/kibana';
+import type { Milestone } from '../../common/trial_companion/types';
+import type { NBAAction, NBATODOItem } from './nba_translations';
 
 export interface YourTrialCompanionProps {
-  completed: number;
-  total: number;
+  completed: Milestone[];
+  todoItems: NBATODOItem[];
 }
 
-const myContent = [
-  {
-    label: 'Add an integration',
-    onClick: () => {},
-    iconType: 'database',
-  },
-  {
-    label: 'Explore your data in Discover',
-    onClick: () => {},
-    iconType: 'dashboardApp',
-  },
-  {
-    label: 'Preview and enable rules',
-    onClick: () => {},
-    iconType: 'securitySignal',
-  },
-  {
-    label: 'Investigate an alert',
-    onClick: () => {},
-    iconType: 'bolt',
-  },
-  {
-    label: 'Create case',
-    onClick: () => {},
-    iconType: 'reportingApp',
-  },
-];
+export interface YourTrialCompanionTODOItemProps {
+  item: NBATODOItem;
+  completed: Milestone[];
+}
 
 function buttonContent(completed: number, total: number) {
   return (
@@ -58,7 +40,7 @@ function buttonContent(completed: number, total: number) {
         <h4>
           <FormattedMessage
             id="xpack.securitySolution.trialNotifications.yourTrialCompanion.title"
-            defaultMessage="Getting Started"
+            defaultMessage="Get set up"
           />
         </h4>
       </EuiTitle>
@@ -72,16 +54,89 @@ function buttonContent(completed: number, total: number) {
   );
 }
 
+function itemButtonContent(iconType: string, color: string, title: string) {
+  return (
+    <div>
+      <EuiTitle size="xs" css={{ fontWeight: 'normal' }}>
+        <div>
+          <EuiIcon type={iconType} size="m" color={color} />
+          &nbsp;
+          <FormattedMessage
+            id="xpack.securitySolution.trialNotifications.yourTrialCompanion.item.title"
+            defaultMessage="{title}"
+            values={{ title }}
+          />
+        </div>
+      </EuiTitle>
+    </div>
+  );
+}
+
+const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
+  item,
+  completed,
+}) => {
+  const { ...startServices } = useKibana().services;
+  const iconType = completed.includes(item.milestoneId) ? 'checkInCircleFilled' : 'dotInCircle'; // dot
+  const color = completed.includes(item.milestoneId) ? 'success' : 'default';
+  const accordionId = useGeneratedHtmlId({
+    prefix: 'yourTrialCompanionAccordionTODOItem',
+    suffix: item.milestoneId.toString(),
+  });
+  const action: NBAAction | undefined = item.translate.apps?.[0];
+  const viewButtonText = action?.text;
+  const onViewButton = () => {
+    if (action) {
+      startServices.application.navigateToApp(action.app);
+    }
+  };
+
+  return (
+    <>
+      <EuiSpacer />
+      <EuiAccordion
+        id={accordionId}
+        buttonContent={itemButtonContent(iconType, color, item.translate.title)}
+        arrowDisplay="right"
+      >
+        <FormattedMessage
+          id="xpack.securitySolution.trialNotifications.trialNotification.message"
+          defaultMessage="{message}"
+          values={{ message: item.translate.message }}
+        />
+        {action && viewButtonText && (
+          <>
+            <EuiSpacer size="s" />
+            <EuiButton
+              size="s"
+              onClick={onViewButton}
+              fill={true}
+              data-test-subj="trial-companion-view-button"
+            >
+              <EuiSpacer size="s" />
+              <FormattedMessage
+                id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
+                defaultMessage="{viewButtonText}"
+                values={{ viewButtonText }}
+              />
+            </EuiButton>
+          </>
+        )}
+      </EuiAccordion>
+    </>
+  );
+};
+
 export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   completed,
-  total,
+  todoItems,
 }: YourTrialCompanionProps) => {
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
   const styles = css({
     zIndex: euiTheme.levels.header,
     position: 'absolute',
-    bottom: '5%',
+    bottom: '2%',
     left: euiTheme.size.base,
     '.euiAccordion__buttonContent': {
       width: '100%;',
@@ -92,10 +147,12 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
     <EuiPanel css={styles}>
       <EuiAccordion
         id={accordionId}
-        buttonContent={buttonContent(completed, total)}
+        buttonContent={buttonContent(completed.length, todoItems.length)}
         arrowDisplay="right"
       >
-        <EuiListGroup listItems={myContent} size="s" />
+        {todoItems.map((item) => {
+          return <YourTrialCompanionTODOItem item={item} completed={completed} />;
+        })}
       </EuiAccordion>
     </EuiPanel>
   );
