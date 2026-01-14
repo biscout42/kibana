@@ -9,6 +9,7 @@ import useInterval from 'react-use/lib/useInterval';
 
 import React, { useEffect, useRef, useState } from 'react';
 import { toMountPoint } from '@kbn/react-kibana-mount';
+import { YourTrialCompanion } from './nba_steps';
 import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
@@ -27,6 +28,7 @@ export const TrialCompanion: React.FC<Props> = () => {
   if (!startServices.cloud?.isInTrial() || !trialCompanionEnabled) {
     return null;
   }
+
   return <TrialCompanionImpl />;
 };
 
@@ -103,5 +105,5 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     };
   }, [overlays]);
 
-  return null;
+  return <YourTrialCompanion total={6} completed={2} />;
 };

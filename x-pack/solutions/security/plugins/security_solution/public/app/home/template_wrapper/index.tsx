@@ -24,6 +24,7 @@ import { Timeline } from './timeline';
 import { useShowTimeline } from '../../../common/utils/timeline/use_show_timeline';
 import { useRouteSpy } from '../../../common/utils/route/use_route_spy';
 import { SecurityPageName } from '../../types';
+import { TrialCompanion } from '../../../trial_companion/trial_companion';
 
 /**
  * Need to apply the styles via a className to effect the containing bottom bar
@@ -116,6 +117,7 @@ export const SecuritySolutionTemplateWrapper: React.FC<SecuritySolutionTemplateW
                 </EuiThemeProvider>
               </KibanaPageTemplate.BottomBar>
             )}
+            <TrialCompanion />
           </>
         )}
       </StyledKibanaPageTemplate>

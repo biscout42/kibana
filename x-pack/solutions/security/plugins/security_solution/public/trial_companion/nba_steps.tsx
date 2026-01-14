@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { css } from '@emotion/react';
 import {
   EuiPanel,
   EuiProgress,
@@ -13,6 +14,7 @@ import {
   EuiAccordion,
   useGeneratedHtmlId,
   EuiListGroup,
+  useEuiTheme,
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 
@@ -51,7 +53,7 @@ const myContent = [
 
 function buttonContent(completed: number, total: number) {
   return (
-    <div>
+    <>
       <EuiTitle size="xs">
         <h4>
           <FormattedMessage
@@ -66,7 +68,7 @@ function buttonContent(completed: number, total: number) {
         values={{ completed, total }}
       />
       <EuiProgress value={completed} max={total} size="m" />
-    </div>
+    </>
   );
 }
 
@@ -75,9 +77,19 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   total,
 }: YourTrialCompanionProps) => {
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
+  const { euiTheme } = useEuiTheme();
+  const styles = css({
+    zIndex: euiTheme.levels.header,
+    position: 'absolute',
+    bottom: '5%',
+    left: euiTheme.size.base,
+    '.euiAccordion__buttonContent': {
+      width: '100%;',
+    },
+  });
 
   return (
-    <EuiPanel>
+    <EuiPanel css={styles}>
       <EuiAccordion
         id={accordionId}
         buttonContent={buttonContent(completed, total)}
