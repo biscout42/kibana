@@ -13,8 +13,6 @@ import type {
 } from '@kbn/core/server';
 import { transformError } from '@kbn/securitysolution-es-utils';
 import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
-import type { TypeOf } from '@kbn/config-schema';
-import { schema } from '@kbn/config-schema';
 import { type Either, left, match, right } from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import type { TrialCompanionUserNBAService } from '../services/trial_companion_user_nba_service.types';
@@ -27,14 +25,6 @@ interface NBAContext {
   nbaService: TrialCompanionUserNBAService;
   username: string;
 }
-
-const NBARouteSchema = {
-  body: schema.object({
-    milestoneId: schema.number(),
-  }),
-};
-
-type NBASeenRouteRequestBody = TypeOf<typeof NBARouteSchema.body>;
 
 export const registerGetNBARoute = ({ router, logger }: TrialCompanionRoutesDeps) => {
   router.versioned
@@ -60,71 +50,6 @@ export const registerGetNBARoute = ({ router, logger }: TrialCompanionRoutesDeps
     );
 };
 
-export const registerPostNBASeenRoute = ({ router, logger }: TrialCompanionRoutesDeps) => {
-  router.versioned
-    .post({
-      path: TRIAL_COMPANION_NBA_URL,
-      access: 'internal',
-      summary: 'Save Trial Companion NBA seen action (aka dismiss)',
-      options: {
-        tags: ['api'],
-      },
-      security: {
-        authz: {
-          requiredPrivileges: ['securitySolution'],
-        },
-      },
-    })
-    .addVersion(
-      {
-        version: '1',
-        validate: {
-          request: NBARouteSchema,
-        },
-      },
-      postNBAUserSeen(logger)
-    );
-};
-
-const postNBAUserSeen =
-  (
-    logger: Logger
-  ): RequestHandler<never, never, NBASeenRouteRequestBody, SecuritySolutionRequestHandlerContext> =>
-  async (context, request, response) => {
-    const siemResponse = buildSiemResponse(response);
-    const { milestoneId } = request.body;
-    try {
-      logger.debug(
-        `POST Trial Companion NBA seen route called. milestoneId: ${milestoneId}, body: ${JSON.stringify(
-          request.body
-        )}`
-      );
-
-      const nbaContextOrResponse: Either<IKibanaResponse, NBAContext> = await getNBAContext(
-        logger,
-        context,
-        response
-      );
-      return pipe(
-        nbaContextOrResponse,
-        match(
-          async (e: IKibanaResponse) => e,
-          async (s: NBAContext) => {
-            await s.nbaService.markAsSeen(milestoneId, s.username);
-            return response.ok({});
-          }
-        )
-      );
-    } catch (err) {
-      logger.error(`Post Trial Companion NBA seen route: Caught error: ${err}`);
-      const error = transformError(err);
-      return siemResponse.error({
-        body: error.message,
-        statusCode: error.statusCode,
-      });
-    }
-  };
-
 const getCurrentNBAForUser =
   (logger: Logger): RequestHandler<never, never, never, SecuritySolutionRequestHandlerContext> =>
   async (context, request, response) => {
@@ -142,13 +67,10 @@ const getCurrentNBAForUser =
         match(
           async (e: IKibanaResponse) => e,
           async (s: NBAContext) => {
-            const currentMilestoneId = await s.nbaService.nextNBA(s.username);
-            if (!currentMilestoneId) {
-              return response.ok({});
-            }
+            const openTODOs = await s.nbaService.openTODOs();
             return response.ok({
               body: {
-                milestoneId: currentMilestoneId,
+                openTODOs,
               },
             });
           }

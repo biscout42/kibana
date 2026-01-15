@@ -5,11 +5,11 @@
  * 2.0.
  */
 
-import type { NBAMilestone } from '../types';
+import type { NBAToBeDone } from '../types';
 import type { Milestone } from '../../../../common/trial_companion/types';
 
 export interface TrialCompanionMilestoneRepository {
-  getCurrent(): Promise<NBAMilestone | undefined>;
-  create(id: Milestone): Promise<NBAMilestone>;
-  update(milestone: NBAMilestone): Promise<void>;
+  getCurrent(): Promise<NBAToBeDone | undefined>;
+  create(milestoneIds: Milestone[]): Promise<NBAToBeDone>;
+  update(toBeDone: NBAToBeDone): Promise<void>;
 }

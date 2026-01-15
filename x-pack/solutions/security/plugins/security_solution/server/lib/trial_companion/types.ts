@@ -20,4 +20,9 @@ export interface NBAMilestone {
   savedObjectId: string;
 }
 
+export interface NBAToBeDone {
+  savedObjectId: string;
+  milestoneIds: Milestone[];
+}
+
 export type DetectorF = () => Promise<Milestone | undefined>;

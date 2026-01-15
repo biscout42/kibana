@@ -36,7 +36,7 @@ const TrialCompanionImpl: React.FC<Props> = () => {
   const [previouslyLoaded, setPreviouslyLoaded] = useState<Milestone[] | undefined>(undefined);
   const { value, loading } = useGetNBA([count]);
 
-  const milestoneId = value?.milestoneId; // no milestoneId means anything to show
+  const openTODOs = value?.openTODOs; // no milestoneId means anything to show
 
   useInterval(() => {
     setCount((c) => c + 1);
@@ -44,15 +44,19 @@ const TrialCompanionImpl: React.FC<Props> = () => {
 
   window.console.log('NBA loading: ', loading, ' previouslyLoaded: ', previouslyLoaded);
 
-  let openTODOs = previouslyLoaded;
-  if (!loading && milestoneId) {
-    openTODOs = [milestoneId];
-    if (!previouslyLoaded || difference(openTODOs, previouslyLoaded).length > 0) {
-      setPreviouslyLoaded(openTODOs);
+  let result = previouslyLoaded;
+  if (!loading && openTODOs) {
+    result = openTODOs;
+    if (
+      !previouslyLoaded ||
+      difference(result, previouslyLoaded).length > 0 ||
+      difference(previouslyLoaded, result).length > 0
+    ) {
+      setPreviouslyLoaded(result);
     }
   }
 
-  if (!openTODOs) return null;
+  if (!result) return null;
 
-  return <YourTrialCompanion open={openTODOs} todoItems={NBA_TODO_LIST} />;
+  return <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} />;
 };

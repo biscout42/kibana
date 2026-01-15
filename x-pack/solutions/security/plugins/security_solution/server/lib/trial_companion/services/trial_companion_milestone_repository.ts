@@ -8,16 +8,16 @@
 import type { Logger } from '@kbn/core/server';
 import type { SavedObject, SavedObjectsClientContract } from '@kbn/core-saved-objects-api-server';
 import type { Milestone } from '../../../../common/trial_companion/types';
-import type { NBAMilestone } from '../types';
+import type { NBAToBeDone } from '../types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
 import type { NBASavedObjectAttributes } from '../saved_objects';
 import { NBA_SAVED_OBJECT_TYPE } from '../saved_objects';
 
-function toMilestone(result: SavedObject<NBASavedObjectAttributes>): NBAMilestone {
+function toOpenTODOs(result: SavedObject<NBASavedObjectAttributes>): NBAToBeDone {
   return {
-    milestoneId: result.attributes.milestoneId as Milestone,
+    milestoneIds: result.attributes.openTODOs,
     savedObjectId: result.id,
-  } as NBAMilestone;
+  } as NBAToBeDone;
 }
 
 export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMilestoneRepository {
@@ -29,14 +29,14 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
     this.soClient = soClient;
   }
 
-  async create(id: Milestone): Promise<NBAMilestone> {
+  async create(milestoneIds: Milestone[]): Promise<NBAToBeDone> {
     const response = await this.soClient.create<NBASavedObjectAttributes>(NBA_SAVED_OBJECT_TYPE, {
-      milestoneId: id,
+      openTODOs: milestoneIds,
     });
-    return toMilestone(response);
+    return toOpenTODOs(response);
   }
 
-  async getCurrent(): Promise<NBAMilestone | undefined> {
+  async getCurrent(): Promise<NBAToBeDone | undefined> {
     const response = await this.soClient.find<NBASavedObjectAttributes>({
       type: NBA_SAVED_OBJECT_TYPE,
     });
@@ -45,21 +45,21 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
     }
 
     const result = response.saved_objects[0];
-    return toMilestone(result);
+    return toOpenTODOs(result);
   }
 
-  async update(milestone: NBAMilestone): Promise<void> {
+  async update(toBeDone: NBAToBeDone): Promise<void> {
     const response = await this.soClient.update<NBASavedObjectAttributes>(
       NBA_SAVED_OBJECT_TYPE,
-      milestone.savedObjectId,
+      toBeDone.savedObjectId,
       {
-        milestoneId: milestone.milestoneId,
+        openTODOs: toBeDone.milestoneIds,
       }
     );
 
     this.logger.debug(
-      `Saved milestone with id ${response.id} and milestoneId ${
-        milestone.milestoneId
+      `Saved open TODOs with id ${response.id} and ${
+        toBeDone.milestoneIds
       }. Response: ${JSON.stringify(response)}`
     );
   }

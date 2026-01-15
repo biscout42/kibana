@@ -8,6 +8,5 @@
 import type { Milestone } from '../../../../common/trial_companion/types';
 
 export interface TrialCompanionUserNBAService {
-  markAsSeen(milestoneId: Milestone, userId: string): Promise<void>;
-  nextNBA(userId: string): Promise<Milestone | undefined>;
+  openTODOs(): Promise<Milestone[]>;
 }

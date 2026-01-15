@@ -10,7 +10,7 @@ import { TRIAL_COMPANION_NBA_URL } from '../../common/trial_companion/constants'
 import { KibanaServices } from '../common/lib/kibana';
 
 export interface GetNBAResponse {
-  milestoneId?: Milestone;
+  openTODOs: Milestone[];
 }
 
 export const getNBA = async (): Promise<GetNBAResponse> => {
