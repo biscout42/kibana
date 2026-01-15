@@ -24,6 +24,8 @@ import type { Milestone } from '../../common/trial_companion/types';
 import type { NBAAction, NBATODOItem } from './nba_translations';
 import RadioCircleIconSVG from './radio_circle_icon.svg';
 
+// TODO: rename this file
+
 export interface YourTrialCompanionProps {
   completed: Milestone[];
   todoItems: NBATODOItem[];

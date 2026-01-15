@@ -25,6 +25,8 @@ const meta: Meta<typeof YourTrialCompanion> = {
   },
 };
 
+// TODO: fix me
+
 export default meta;
 
 const Template: StoryFn<YourTrialCompanionProps> = (args) => {

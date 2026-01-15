@@ -7,16 +7,11 @@
 
 import useInterval from 'react-use/lib/useInterval';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { toMountPoint } from '@kbn/react-kibana-mount';
+import React, { useState } from 'react';
 import { YourTrialCompanion } from './nba_steps';
-import { NBANotification } from './nba_notification';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
-import { postNBAUserSeen } from './api';
-import type { NBA, NBAAction } from './nba_translations';
-import { NBA_TODO_LIST, ALL_NBA } from './nba_translations';
-import { Milestone } from '../../common/trial_companion/types';
+import { NBA_TODO_LIST } from './nba_translations';
 import { useIsExperimentalFeatureEnabled } from '../common/hooks/use_experimental_features';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
@@ -35,10 +30,7 @@ export const TrialCompanion: React.FC<Props> = () => {
 const defaultTimeout = 30000;
 
 const TrialCompanionImpl: React.FC<Props> = () => {
-  const { overlays, ...startServices } = useKibana().services;
-  const bannerId = useRef<string | undefined>();
   const [count, setCount] = useState(0);
-  const [previousMilestone, setPreviousMilestone] = useState<Milestone | undefined>(undefined);
   const { value, loading } = useGetNBA([count]);
 
   const milestoneId = value?.milestoneId; // no milestoneId means anything to show
@@ -47,68 +39,7 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     setCount((c) => c + 1);
   }, defaultTimeout);
 
-  useEffect(() => {
-    const removeBanner = () => {
-      if (bannerId.current) {
-        overlays.banners.remove(bannerId.current);
-      }
-      bannerId.current = undefined;
-    };
+  if (loading || !milestoneId) return null;
 
-    const onSeenBanner = () => {
-      if (milestoneId) {
-        postNBAUserSeen(milestoneId);
-      }
-      removeBanner();
-    };
-
-    if (!loading && milestoneId && (!bannerId.current || milestoneId !== previousMilestone)) {
-      const nba: NBA | undefined = ALL_NBA.get(milestoneId);
-      if (!nba) {
-        return;
-      }
-
-      let onViewButton: (() => void) | undefined;
-      let viewButtonText: string | undefined;
-
-      if (nba.apps && nba.apps.length > 0) {
-        const nbaAction: NBAAction = nba.apps[0];
-        onViewButton = () => {
-          startServices.application.navigateToApp(nbaAction.app);
-        };
-        viewButtonText = nbaAction.text;
-      }
-
-      const component = (
-        <NBANotification
-          title={nba.title}
-          message={nba.message}
-          viewButtonText={viewButtonText}
-          onSeenBanner={onSeenBanner}
-          onViewButton={onViewButton}
-        />
-      );
-      const mount = toMountPoint(component, startServices);
-      bannerId.current = overlays.banners.replace(bannerId.current, mount, 1000);
-      setPreviousMilestone(milestoneId);
-    } else if (bannerId.current && !milestoneId && !loading) {
-      removeBanner();
-    } // else do nothing, keep the banner shown
-  }, [overlays, startServices, milestoneId, loading, previousMilestone]);
-
-  useEffect(() => {
-    return () => {
-      if (bannerId.current) {
-        overlays.banners.remove(bannerId.current);
-      }
-      bannerId.current = undefined;
-    };
-  }, [overlays]);
-
-  return (
-    <YourTrialCompanion
-      completed={[Milestone.M1, Milestone.M3, Milestone.M5]}
-      todoItems={NBA_TODO_LIST}
-    />
-  );
+  return <YourTrialCompanion completed={[milestoneId]} todoItems={NBA_TODO_LIST} />;
 };
