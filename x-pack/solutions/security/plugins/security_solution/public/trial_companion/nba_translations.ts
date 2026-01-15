@@ -105,7 +105,7 @@ const NBA_M5: NBA = toNBA(
       text: 'Try Attack Discovery',
     },
   ]
-); // TODO: Try Attack Discovery - it is flayout
+);
 
 const NBA_M6: NBA = toNBA(
   Milestone.M6,
