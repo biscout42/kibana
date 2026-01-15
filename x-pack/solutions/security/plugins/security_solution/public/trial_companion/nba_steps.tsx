@@ -22,6 +22,7 @@ import { FormattedMessage } from '@kbn/i18n-react';
 import { useKibana } from '../common/lib/kibana';
 import type { Milestone } from '../../common/trial_companion/types';
 import type { NBAAction, NBATODOItem } from './nba_translations';
+import RadioCircleIconSVG from './radio_circle_icon.svg';
 
 export interface YourTrialCompanionProps {
   completed: Milestone[];
@@ -77,7 +78,9 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
   completed,
 }) => {
   const { ...startServices } = useKibana().services;
-  const iconType = completed.includes(item.milestoneId) ? 'checkInCircleFilled' : 'dotInCircle'; // dot
+  const iconType = completed.includes(item.milestoneId)
+    ? 'checkInCircleFilled'
+    : RadioCircleIconSVG;
   const color = completed.includes(item.milestoneId) ? 'success' : 'default';
   const accordionId = useGeneratedHtmlId({
     prefix: 'yourTrialCompanionAccordionTODOItem',
@@ -93,12 +96,13 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
 
   return (
     <>
-      <EuiSpacer />
+      <EuiSpacer size="s" />
       <EuiAccordion
         id={accordionId}
         buttonContent={itemButtonContent(iconType, color, item.translate.title)}
         arrowDisplay="right"
       >
+        <EuiSpacer size="s" />
         <FormattedMessage
           id="xpack.securitySolution.trialNotifications.trialNotification.message"
           defaultMessage="{message}"
@@ -113,7 +117,6 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
               fill={true}
               data-test-subj="trial-companion-view-button"
             >
-              <EuiSpacer size="s" />
               <FormattedMessage
                 id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
                 defaultMessage="{viewButtonText}"
@@ -137,6 +140,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
     zIndex: euiTheme.levels.header,
     position: 'absolute',
     bottom: '2%',
+    maxWidth: '400px',
     left: euiTheme.size.base,
     '.euiAccordion__buttonContent': {
       width: '100%;',
@@ -149,6 +153,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
         id={accordionId}
         buttonContent={buttonContent(completed.length, todoItems.length)}
         arrowDisplay="right"
+        paddingSize="s"
       >
         {todoItems.map((item) => {
           return <YourTrialCompanionTODOItem item={item} completed={completed} />;
