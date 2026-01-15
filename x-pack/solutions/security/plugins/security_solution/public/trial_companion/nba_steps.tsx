@@ -27,7 +27,7 @@ import RadioCircleIconSVG from './radio_circle_icon.svg';
 // TODO: rename this file
 
 export interface YourTrialCompanionProps {
-  completed: Milestone[];
+  open: Milestone[];
   todoItems: NBATODOItem[];
 }
 
@@ -132,18 +132,25 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
   );
 };
 
+function completedTODOs(todoList: NBATODOItem[], open: Milestone[]): Milestone[] {
+  return todoList
+    .map((item) => item.milestoneId)
+    .filter((milestoneId) => !open.includes(milestoneId));
+}
+
 export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
-  completed,
+  open,
   todoItems,
 }: YourTrialCompanionProps) => {
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
+  const completed = completedTODOs(todoItems, open);
   const styles = css({
     zIndex: euiTheme.levels.header,
-    position: 'absolute',
-    bottom: '2%',
+    position: 'fixed',
+    bottom: '5%',
     maxWidth: '400px',
-    left: euiTheme.size.base,
+    left: `calc(var(--kbn-layout--navigation-width) + ${euiTheme.size.base})`,
     '.euiAccordion__buttonContent': {
       width: '100%;',
     },
