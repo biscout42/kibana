@@ -16,7 +16,10 @@ import { buildSiemResponse } from '@kbn/lists-plugin/server/routes';
 import { type Either, left, match, right } from 'fp-ts/Either';
 import { pipe } from 'fp-ts/function';
 import type { TrialCompanionUserNBAService } from '../services/trial_companion_user_nba_service.types';
-import { TRIAL_COMPANION_NBA_URL } from '../../../../common/trial_companion/constants';
+import {
+  TRIAL_COMPANION_NBA_DISMISS_URL,
+  TRIAL_COMPANION_NBA_URL,
+} from '../../../../common/trial_companion/constants';
 import type { SecuritySolutionRequestHandlerContext } from '../../../types';
 import { TrialCompanionUserNBAServiceImpl } from '../services/trial_companion_user_nba_service';
 import type { TrialCompanionRoutesDeps } from '../types';
@@ -50,6 +53,64 @@ export const registerGetNBARoute = ({ router, logger }: TrialCompanionRoutesDeps
     );
 };
 
+export const registerPostNBADismissRoute = ({ router, logger }: TrialCompanionRoutesDeps) => {
+  router.versioned
+    .post({
+      path: TRIAL_COMPANION_NBA_DISMISS_URL,
+      access: 'internal',
+      summary: 'Save Trial Companion NBA TODO list dismiss action',
+      options: {
+        tags: ['api'],
+      },
+      security: {
+        authz: {
+          requiredPrivileges: ['securitySolution'],
+        },
+      },
+    })
+    .addVersion(
+      {
+        validate: false,
+        version: '1',
+      },
+      postNBADismiss(logger)
+    );
+};
+
+const postNBADismiss =
+  (logger: Logger): RequestHandler<never, never, never, SecuritySolutionRequestHandlerContext> =>
+  async (context, request, response) => {
+    const siemResponse = buildSiemResponse(response);
+    try {
+      logger.info(
+        `POST Trial Companion NBA dismiss route called. Body: ${JSON.stringify(request.body)}`
+      );
+
+      const nbaContextOrResponse: Either<IKibanaResponse, NBAContext> = await getNBAContext(
+        logger,
+        context,
+        response
+      );
+      return pipe(
+        nbaContextOrResponse,
+        match(
+          async (e: IKibanaResponse) => e,
+          async (s: NBAContext) => {
+            await s.nbaService.dismiss(s.username);
+            return response.ok({});
+          }
+        )
+      );
+    } catch (err) {
+      logger.error(`Post Trial Companion NBA dismiss route: Caught error: ${err}`);
+      const error = transformError(err);
+      return siemResponse.error({
+        body: error.message,
+        statusCode: error.statusCode,
+      });
+    }
+  };
+
 const getCurrentNBAForUser =
   (logger: Logger): RequestHandler<never, never, never, SecuritySolutionRequestHandlerContext> =>
   async (context, request, response) => {
@@ -67,10 +128,11 @@ const getCurrentNBAForUser =
         match(
           async (e: IKibanaResponse) => e,
           async (s: NBAContext) => {
-            const openTODOs = await s.nbaService.openTODOs();
+            const todoList = await s.nbaService.openTODOs();
+            if (!todoList) return response.ok({});
             return response.ok({
               body: {
-                openTODOs,
+                ...todoList,
               },
             });
           }

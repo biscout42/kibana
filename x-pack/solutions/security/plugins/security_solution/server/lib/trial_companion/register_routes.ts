@@ -6,10 +6,11 @@
  */
 
 import type { TrialCompanionRoutesDeps } from './types';
-import { registerGetNBARoute } from './routes/nba_routes';
+import { registerGetNBARoute, registerPostNBADismissRoute } from './routes/nba_routes';
 
 export const registerTrialCompanionRoutes = (deps: TrialCompanionRoutesDeps) => {
   if (deps.enabled) {
     registerGetNBARoute(deps);
+    registerPostNBADismissRoute(deps);
   }
 };

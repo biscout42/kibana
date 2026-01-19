@@ -8,8 +8,10 @@
 import type { Logger } from '@kbn/core/server';
 import type { SavedObject, SavedObjectsClientContract } from '@kbn/core-saved-objects-api-server';
 import type { Milestone } from '../../../../common/trial_companion/types';
-import type { NBAToBeDone } from '../types';
-import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
+import type {
+  TrialCompanionMilestoneRepository,
+  NBAToBeDone,
+} from './trial_companion_milestone_repository.types';
 import type { NBASavedObjectAttributes } from '../saved_objects';
 import { NBA_SAVED_OBJECT_TYPE } from '../saved_objects';
 
@@ -17,6 +19,7 @@ function toOpenTODOs(result: SavedObject<NBASavedObjectAttributes>): NBAToBeDone
   return {
     milestoneIds: result.attributes.openTODOs,
     savedObjectId: result.id,
+    dismiss: result.attributes.dismiss,
   } as NBAToBeDone;
 }
 
@@ -54,6 +57,7 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
       toBeDone.savedObjectId,
       {
         openTODOs: toBeDone.milestoneIds,
+        dismiss: toBeDone.dismiss,
       }
     );
 

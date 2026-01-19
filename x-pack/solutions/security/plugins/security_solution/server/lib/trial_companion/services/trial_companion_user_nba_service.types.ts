@@ -5,8 +5,9 @@
  * 2.0.
  */
 
-import type { Milestone } from '../../../../common/trial_companion/types';
+import type { NBATODOList } from '../types';
 
 export interface TrialCompanionUserNBAService {
-  openTODOs(): Promise<Milestone[]>;
+  openTODOs(): Promise<NBATODOList | undefined>;
+  dismiss(username: string): Promise<void>;
 }

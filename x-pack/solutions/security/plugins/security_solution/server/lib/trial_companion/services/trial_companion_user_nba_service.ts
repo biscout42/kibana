@@ -7,21 +7,29 @@
 
 import type { Logger } from '@kbn/core/server';
 import type { SavedObjectsClientContract } from '@kbn/core-saved-objects-api-server';
+import type { NBATODOList } from '../types';
 import { TrialCompanionMilestoneRepositoryImpl } from './trial_companion_milestone_repository';
-import type { Milestone } from '../../../../common/trial_companion/types';
 import type { TrialCompanionUserNBAService } from './trial_companion_user_nba_service.types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
 
 export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBAService {
+  private readonly logger: Logger;
   private readonly repo: TrialCompanionMilestoneRepository;
 
   constructor(logger: Logger, soClient: SavedObjectsClientContract) {
-    this.repo = new TrialCompanionMilestoneRepositoryImpl(logger, soClient);
+    this.logger = logger.get('trial_companion_user_nba_service');
+    this.repo = new TrialCompanionMilestoneRepositoryImpl(this.logger, soClient);
+  }
+  async dismiss(username: string): Promise<void> {
+    this.logger.debug(`Dismiss called by user ${username}`);
+    const result = await this.repo.getCurrent();
+    if (!result) return;
+    await this.repo.update({ ...result, dismiss: true });
   }
 
-  async openTODOs(): Promise<Milestone[]> {
+  async openTODOs(): Promise<NBATODOList | undefined> {
     const result = await this.repo.getCurrent();
-    if (!result) return [];
-    return result.milestoneIds;
+    if (!result) return undefined;
+    return { openTODOs: result.milestoneIds, dismiss: result.dismiss };
   }
 }

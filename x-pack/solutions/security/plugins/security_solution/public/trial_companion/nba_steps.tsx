@@ -35,7 +35,7 @@ import RadioCircleIconSVG from './radio_circle_icon.svg';
 export interface YourTrialCompanionProps {
   open: Milestone[];
   todoItems: NBATODOItem[];
-  onDismissButton: () => void;
+  onDismiss: () => void;
 }
 
 export interface YourTrialCompanionTODOItemProps {
@@ -164,12 +164,12 @@ function completedTODOs(todoList: NBATODOItem[], open: Milestone[]): Milestone[]
 export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   open,
   todoItems,
-  onDismissButton,
+  onDismiss,
 }: YourTrialCompanionProps) => {
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
   const completed = completedTODOs(todoItems, open);
-  const showDismiss = difference(open, completed).length === 0;
+  const showDismiss = difference(open, completed).length !== 0;
   const [expandedItemId, setExpandedItemId] = useState<Milestone | null>(null);
   const styles = css({
     zIndex: euiTheme.levels.header,
@@ -182,6 +182,10 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
     },
   });
   const [isVisible, setIsVisible] = useState(true);
+  const onDismissButton = () => {
+    setIsVisible(false);
+    onDismiss();
+  };
 
   return (
     isVisible && (
@@ -207,7 +211,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
               <EuiFlexItem grow={false}>
                 <EuiSpacer size="s" />
                 <EuiButtonEmpty
-                  size="s"
+                  size="xs"
                   onClick={() => {
                     setIsVisible(false);
                   }}

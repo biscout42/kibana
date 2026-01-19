@@ -9,6 +9,7 @@ import useInterval from 'react-use/lib/useInterval';
 
 import React, { useState } from 'react';
 import { difference } from 'lodash';
+import { postNBADismiss } from './api';
 import { YourTrialCompanion } from './nba_steps';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
@@ -28,20 +29,25 @@ export const TrialCompanion: React.FC<Props> = () => {
   return <TrialCompanionImpl />;
 };
 
+// TODO: 30s
 const defaultTimeout = 10000;
 
 const TrialCompanionImpl: React.FC<Props> = () => {
   const [count, setCount] = useState(0);
   const [previouslyLoaded, setPreviouslyLoaded] = useState<Milestone[] | undefined>(undefined);
-  const { value, loading } = useGetNBA([count]);
-
+  const { value, error, loading } = useGetNBA([count]);
   const openTODOs = value?.openTODOs; // no milestoneId means anything to show
 
   useInterval(() => {
-    setCount((c) => c + 1);
+    if (error || loading || (value?.openTODOs && !value?.dismiss)) {
+      window.console.log('setCount: ', count);
+      setCount((c) => c + 1);
+    }
   }, defaultTimeout);
 
-  const onDismissButton = () => {};
+  const onDismissButton = () => {
+    postNBADismiss();
+  };
 
   let result = previouslyLoaded;
   if (!loading && openTODOs) {
@@ -55,9 +61,7 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     }
   }
 
-  if (!result) return null;
+  if (!result || value?.dismiss) return null;
 
-  return (
-    <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} onDismissButton={onDismissButton} />
-  );
+  return <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} onDismiss={onDismissButton} />;
 };
