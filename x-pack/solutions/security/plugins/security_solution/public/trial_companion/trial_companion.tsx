@@ -29,7 +29,6 @@ export const TrialCompanion: React.FC<Props> = () => {
   return <TrialCompanionImpl />;
 };
 
-// TODO: 30s
 const defaultTimeout = 10000;
 
 const TrialCompanionImpl: React.FC<Props> = () => {
@@ -40,7 +39,6 @@ const TrialCompanionImpl: React.FC<Props> = () => {
 
   useInterval(() => {
     if (error || loading || (value?.openTODOs && !value?.dismiss)) {
-      window.console.log('setCount: ', count);
       setCount((c) => c + 1);
     }
   }, defaultTimeout);

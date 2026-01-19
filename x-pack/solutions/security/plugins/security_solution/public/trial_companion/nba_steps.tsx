@@ -169,7 +169,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
   const completed = completedTODOs(todoItems, open);
-  const showDismiss = difference(open, completed).length !== 0;
+  const showDismiss = difference(open, completed).length === 0;
   const [expandedItemId, setExpandedItemId] = useState<Milestone | null>(null);
   const styles = css({
     zIndex: euiTheme.levels.header,

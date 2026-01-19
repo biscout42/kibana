@@ -34,8 +34,11 @@ import type {
 } from './trial_companion_milestone_service.types';
 import { newTelemetryLogger } from '../../telemetry/helpers';
 import type { Milestone } from '../../../../common/trial_companion/types';
-import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
-import type { DetectorF, NBAToBeDone } from '../types';
+import type {
+  TrialCompanionMilestoneRepository,
+  NBAToBeDone,
+} from './trial_companion_milestone_repository.types';
+import type { DetectorF } from '../types';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
@@ -54,6 +57,7 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
   const soClient = savedObjects.getUnsafeInternalClient();
   const detectorsLogger = logger.get('trial-companion-milestone-detectors');
 
+  // the list of detectors should have minimum all milestones from NBA_TODO_LIST at x-pack/solutions/security/plugins/security_solution/public/trial_companion/nba_translations.ts:131
   const detectors: DetectorF[] = [];
 
   const usageCollectorDeps: UsageCollectorDeps | undefined = usageCollection
