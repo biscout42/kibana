@@ -17,6 +17,7 @@ import {
   EuiIcon,
   EuiSpacer,
   EuiButton,
+  EuiButtonEmpty,
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { useKibana } from '../common/lib/kibana';
@@ -25,6 +26,7 @@ import type { NBAAction, NBATODOItem } from './nba_translations';
 import RadioCircleIconSVG from './radio_circle_icon.svg';
 
 // TODO: rename this file
+// TODO: unit tests
 
 export interface YourTrialCompanionProps {
   open: Milestone[];
@@ -172,26 +174,40 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
       width: '100%;',
     },
   });
+  const [isVisible, setIsVisible] = useState(true);
 
   return (
-    <EuiPanel css={styles}>
-      <EuiAccordion
-        id={accordionId}
-        buttonContent={buttonContent(completed.length, todoItems.length)}
-        arrowDisplay="right"
-        paddingSize="s"
-      >
-        {todoItems.map((item) => {
-          return (
-            <YourTrialCompanionTODOItem
-              item={item}
-              completed={completed}
-              setExpandedItemId={setExpandedItemId}
-              trigger={expandedItemId === item.milestoneId ? 'open' : 'closed'}
+    isVisible && (
+      <EuiPanel css={styles}>
+        <EuiAccordion
+          id={accordionId}
+          buttonContent={buttonContent(completed.length, todoItems.length)}
+          arrowDisplay="right"
+          paddingSize="s"
+        >
+          {todoItems.map((item) => {
+            return (
+              <YourTrialCompanionTODOItem
+                item={item}
+                completed={completed}
+                setExpandedItemId={setExpandedItemId}
+                trigger={expandedItemId === item.milestoneId ? 'open' : 'closed'}
+              />
+            );
+          })}
+          <EuiSpacer size="s" />
+          <EuiButtonEmpty
+            onClick={() => {
+              setIsVisible(false);
+            }}
+          >
+            <FormattedMessage
+              id="xpack.securitySolution.trialNotifications.yourTrialCompanion.hideMe"
+              defaultMessage="Hide Me"
             />
-          );
-        })}
-      </EuiAccordion>
-    </EuiPanel>
+          </EuiButtonEmpty>
+        </EuiAccordion>
+      </EuiPanel>
+    )
   );
 };
