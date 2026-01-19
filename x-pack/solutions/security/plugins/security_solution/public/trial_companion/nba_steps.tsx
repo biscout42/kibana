@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { difference } from 'lodash';
 import { css } from '@emotion/react';
 import {
   EuiPanel,
@@ -18,6 +19,9 @@ import {
   EuiSpacer,
   EuiButton,
   EuiButtonEmpty,
+  EuiHorizontalRule,
+  EuiFlexGroup,
+  EuiFlexItem,
 } from '@elastic/eui';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { useKibana } from '../common/lib/kibana';
@@ -31,6 +35,7 @@ import RadioCircleIconSVG from './radio_circle_icon.svg';
 export interface YourTrialCompanionProps {
   open: Milestone[];
   todoItems: NBATODOItem[];
+  onDismissButton: () => void;
 }
 
 export interface YourTrialCompanionTODOItemProps {
@@ -159,10 +164,12 @@ function completedTODOs(todoList: NBATODOItem[], open: Milestone[]): Milestone[]
 export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   open,
   todoItems,
+  onDismissButton,
 }: YourTrialCompanionProps) => {
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
   const completed = completedTODOs(todoItems, open);
+  const showDismiss = difference(open, completed).length === 0;
   const [expandedItemId, setExpandedItemId] = useState<Milestone | null>(null);
   const styles = css({
     zIndex: euiTheme.levels.header,
@@ -195,17 +202,39 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
               />
             );
           })}
-          <EuiSpacer size="s" />
-          <EuiButtonEmpty
-            onClick={() => {
-              setIsVisible(false);
-            }}
-          >
-            <FormattedMessage
-              id="xpack.securitySolution.trialNotifications.yourTrialCompanion.hideMe"
-              defaultMessage="Hide Me"
-            />
-          </EuiButtonEmpty>
+          {!showDismiss && (
+            <EuiFlexGroup alignItems={'center'} direction={'column'} justifyContent="spaceAround">
+              <EuiFlexItem grow={false}>
+                <EuiSpacer size="s" />
+                <EuiButtonEmpty
+                  size="s"
+                  onClick={() => {
+                    setIsVisible(false);
+                  }}
+                >
+                  <FormattedMessage
+                    id="xpack.securitySolution.trialNotifications.yourTrialCompanion.hideMe"
+                    defaultMessage="Hide Me"
+                  />
+                </EuiButtonEmpty>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+          )}
+          {showDismiss && (
+            <>
+              <EuiHorizontalRule margin="xs" />
+              <EuiFlexGroup alignItems={'center'} direction={'column'}>
+                <EuiFlexItem>
+                  <EuiButton fill={true} onClick={onDismissButton} color={'primary'}>
+                    <FormattedMessage
+                      id="xpack.securitySolution.trialNotifications.yourTrialCompanion.dismiss"
+                      defaultMessage="Dismiss"
+                    />
+                  </EuiButton>
+                </EuiFlexItem>
+              </EuiFlexGroup>
+            </>
+          )}
         </EuiAccordion>
       </EuiPanel>
     )

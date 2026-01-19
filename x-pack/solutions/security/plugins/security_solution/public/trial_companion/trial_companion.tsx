@@ -25,7 +25,6 @@ export const TrialCompanion: React.FC<Props> = () => {
   if (!startServices.cloud?.isInTrial() || !trialCompanionEnabled) {
     return null;
   }
-
   return <TrialCompanionImpl />;
 };
 
@@ -42,7 +41,7 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     setCount((c) => c + 1);
   }, defaultTimeout);
 
-  window.console.log('NBA loading: ', loading, ' previouslyLoaded: ', previouslyLoaded);
+  const onDismissButton = () => {};
 
   let result = previouslyLoaded;
   if (!loading && openTODOs) {
@@ -58,5 +57,7 @@ const TrialCompanionImpl: React.FC<Props> = () => {
 
   if (!result) return null;
 
-  return <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} />;
+  return (
+    <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} onDismissButton={onDismissButton} />
+  );
 };
