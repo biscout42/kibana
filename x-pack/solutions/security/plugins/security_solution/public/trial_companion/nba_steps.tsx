@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { css } from '@emotion/react';
 import {
   EuiPanel,
@@ -34,6 +34,8 @@ export interface YourTrialCompanionProps {
 export interface YourTrialCompanionTODOItemProps {
   item: NBATODOItem;
   completed: Milestone[];
+  setExpandedItemId: (id: Milestone | null) => void;
+  trigger: 'open' | 'closed';
 }
 
 function buttonContent(completed: number, total: number) {
@@ -78,6 +80,8 @@ function itemButtonContent(iconType: string, color: string, title: string) {
 const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
   item,
   completed,
+  setExpandedItemId,
+  trigger,
 }) => {
   const { ...startServices } = useKibana().services;
   const iconType = completed.includes(item.milestoneId)
@@ -95,6 +99,13 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
       startServices.application.navigateToApp(action.app);
     }
   };
+  const onToggle = (isOpen: boolean) => {
+    if (isOpen) {
+      setExpandedItemId(item.milestoneId);
+    } else {
+      setExpandedItemId(null);
+    }
+  };
 
   return (
     <>
@@ -103,6 +114,11 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
         id={accordionId}
         buttonContent={itemButtonContent(iconType, color, item.translate.title)}
         arrowDisplay="right"
+        borders={trigger === 'open' ? 'horizontal' : 'none'}
+        buttonProps={{ paddingSize: 's' }}
+        paddingSize="s"
+        onToggle={onToggle}
+        forceState={trigger}
       >
         <EuiSpacer size="s" />
         <FormattedMessage
@@ -145,6 +161,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
   const completed = completedTODOs(todoItems, open);
+  const [expandedItemId, setExpandedItemId] = useState<Milestone | null>(null);
   const styles = css({
     zIndex: euiTheme.levels.header,
     position: 'fixed',
@@ -165,7 +182,14 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
         paddingSize="s"
       >
         {todoItems.map((item) => {
-          return <YourTrialCompanionTODOItem item={item} completed={completed} />;
+          return (
+            <YourTrialCompanionTODOItem
+              item={item}
+              completed={completed}
+              setExpandedItemId={setExpandedItemId}
+              trigger={expandedItemId === item.milestoneId ? 'open' : 'closed'}
+            />
+          );
         })}
       </EuiAccordion>
     </EuiPanel>
