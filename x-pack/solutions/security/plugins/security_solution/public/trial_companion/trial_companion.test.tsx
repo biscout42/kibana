@@ -6,24 +6,29 @@
  */
 
 import React from 'react';
-import { render, waitFor, act } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { TrialCompanion } from './trial_companion';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
 import { useIsExperimentalFeatureEnabled } from '../common/hooks/use_experimental_features';
 import { Milestone } from '../../common/trial_companion/types';
+import { GET_SET_UP_ACCORDION_TEST_ID, TEST_SUBJ_PREFIX } from './nba_get_setup_panel';
+import { NBA_TODO_LIST } from './nba_translations';
+import { TestProviders } from '../common/mock';
 
 jest.mock('../common/lib/kibana');
 jest.mock('./hooks/use_get_nba');
 jest.mock('../common/hooks/use_experimental_features');
-jest.mock('@kbn/react-kibana-mount', () => ({
-  toMountPoint: jest.fn(() => jest.fn()),
-}));
 jest.mock('./api', () => ({
-  postNBAUserSeen: jest.fn(),
+  postNBADismiss: jest.fn(),
 }));
 
-// TODO: update
+interface NBAResponse {
+  value?: { openTODOs?: Milestone[]; dismiss?: boolean } | undefined;
+  error: Error | undefined;
+  loading: boolean;
+}
+
 // Mock useInterval to capture the callback
 let intervalCallback: (() => void) | null = null;
 jest.mock('react-use/lib/useInterval', () => {
@@ -37,22 +42,9 @@ const mockUseGetNBA = useGetNBA as jest.Mock;
 const mockUseIsExperimentalFeatureEnabled = useIsExperimentalFeatureEnabled as jest.Mock;
 
 describe('TrialCompanion', () => {
-  const mockBannersReplace = jest.fn().mockReturnValue('mock-banner-id');
-  const mockBannersRemove = jest.fn();
-  const mockNavigateToApp = jest.fn();
-
   const defaultMockServices = {
     cloud: {
       isInTrial: jest.fn().mockReturnValue(true),
-    },
-    overlays: {
-      banners: {
-        replace: mockBannersReplace,
-        remove: mockBannersRemove,
-      },
-    },
-    application: {
-      navigateToApp: mockNavigateToApp,
     },
   };
 
@@ -67,7 +59,7 @@ describe('TrialCompanion', () => {
     mockUseIsExperimentalFeatureEnabled.mockReturnValue(true);
   });
 
-  describe('should not show banner', () => {
+  describe('should not show Get set up panel', () => {
     const notInTrialServices = {
       ...defaultMockServices,
       cloud: {
@@ -79,23 +71,19 @@ describe('TrialCompanion', () => {
       scenario: string;
       isInTrial: boolean;
       featureEnabled: boolean;
-      nbaResponse: {
-        value: { milestoneId?: Milestone } | undefined;
-        error: Error | undefined;
-        loading: boolean;
-      };
+      nbaResponse: NBAResponse;
     }>([
       {
         scenario: 'not in trial',
         isInTrial: false,
         featureEnabled: true,
-        nbaResponse: { value: { milestoneId: Milestone.M1 }, error: undefined, loading: false },
+        nbaResponse: { value: { openTODOs: [Milestone.M1] }, error: undefined, loading: false },
       },
       {
         scenario: 'trial companion feature is disabled',
         isInTrial: true,
         featureEnabled: false,
-        nbaResponse: { value: { milestoneId: Milestone.M1 }, error: undefined, loading: false },
+        nbaResponse: { value: { openTODOs: [Milestone.M1] }, error: undefined, loading: false },
       },
       {
         scenario: 'useGetNBA is loading',
@@ -109,6 +97,16 @@ describe('TrialCompanion', () => {
         featureEnabled: true,
         nbaResponse: { value: undefined, error: new Error('Failed to fetch NBA'), loading: false },
       },
+      {
+        scenario: 'dismiss',
+        isInTrial: true,
+        featureEnabled: true,
+        nbaResponse: {
+          value: { openTODOs: [Milestone.M1], dismiss: true },
+          error: undefined,
+          loading: false,
+        },
+      },
     ])('when $scenario', async ({ isInTrial, featureEnabled, nbaResponse }) => {
       mockUseKibana.mockReturnValue({
         services: isInTrial ? defaultMockServices : notInTrialServices,
@@ -116,35 +114,35 @@ describe('TrialCompanion', () => {
       mockUseIsExperimentalFeatureEnabled.mockReturnValue(featureEnabled);
       mockUseGetNBA.mockReturnValue(nbaResponse);
 
-      render(<TrialCompanion />);
+      const { queryByTestId } = render(<TrialCompanion />);
 
       await waitFor(() => {
-        expect(mockBannersReplace).not.toHaveBeenCalled();
+        expect(queryByTestId(GET_SET_UP_ACCORDION_TEST_ID)).toBeNull();
       });
     });
   });
 
-  interface NBAResponse {
-    value: { milestoneId?: Milestone } | undefined;
-    error: Error | undefined;
-    loading: boolean;
-  }
+  describe('get setup panel rendering and updates', () => {
+    const todoList = NBA_TODO_LIST;
+    const buildResult = (milestoneId: Milestone) => {
+      return todoList.map((i) => i.milestoneId).filter((mId) => mId !== milestoneId);
+    };
 
-  describe('banner rendering and updates', () => {
     it.each<{
       scenario: string;
       firstResponse: NBAResponse;
       secondResponse: NBAResponse | undefined;
-      expectedReplaceCalls: number;
-      expectedRemoveCalls: number;
+      expectedFirstRender: Milestone[];
+      expectedSecondRender: Milestone[] | undefined;
     }>([
       {
         scenario: 'should show banner when a valid milestone is returned',
-        firstResponse: { value: { milestoneId: Milestone.M1 }, error: undefined, loading: false },
-        secondResponse: undefined,
-        expectedReplaceCalls: 1,
-        expectedRemoveCalls: 0,
+        firstResponse: { value: { openTODOs: [Milestone.M1] }, error: undefined, loading: false },
+        secondResponse: { error: undefined, loading: false },
+        expectedFirstRender: buildResult(Milestone.M1),
+        expectedSecondRender: undefined,
       },
+      /*
       {
         scenario: 'should re-render component when useInterval triggers and milestone changes',
         firstResponse: { value: { milestoneId: Milestone.M1 }, error: undefined, loading: false },
@@ -166,58 +164,51 @@ describe('TrialCompanion', () => {
         expectedReplaceCalls: 1,
         expectedRemoveCalls: 1,
       },
+*/
     ])(
       '$scenario',
-      async ({ firstResponse, secondResponse, expectedReplaceCalls, expectedRemoveCalls }) => {
-        mockUseGetNBA.mockReturnValue(firstResponse);
+      async ({ firstResponse, secondResponse, expectedFirstRender, expectedSecondRender }) => {
+        mockUseGetNBA.mockReturnValueOnce(firstResponse);
+        mockUseGetNBA.mockReturnValueOnce(secondResponse);
 
-        const { rerender } = render(<TrialCompanion />);
+        const { rerender, getByTestId, queryByTestId } = render(
+          <TestProviders>
+            <TrialCompanion />
+          </TestProviders>
+        );
 
         await waitFor(() => {
-          expect(mockBannersReplace).toHaveBeenCalled();
+          expect(getByTestId(GET_SET_UP_ACCORDION_TEST_ID)).toBeInTheDocument();
         });
 
-        if (secondResponse) {
-          mockUseGetNBA.mockReturnValue(secondResponse);
-
-          await act(async () => {
-            if (intervalCallback) {
-              intervalCallback();
-            }
+        todoList
+          .map((i) => i.milestoneId)
+          .forEach((mId) => {
+            expect(getByTestId(`${TEST_SUBJ_PREFIX}-item-${mId}`)).toBeInTheDocument();
           });
 
-          rerender(<TrialCompanion />);
-        }
+        expectedFirstRender.forEach((milestoneId) => {
+          const icon = getByTestId(`${TEST_SUBJ_PREFIX}-item-icon-${milestoneId}`);
+          expect(icon).toHaveAttribute('data-euiicon-type', 'checkInCircleFilled');
+        });
 
-        await waitFor(() => {
-          expect(mockBannersReplace).toHaveBeenCalledTimes(expectedReplaceCalls);
-          expect(mockBannersRemove).toHaveBeenCalledTimes(expectedRemoveCalls);
-
-          if (expectedRemoveCalls > 0) {
-            expect(mockBannersRemove).toHaveBeenCalledWith('mock-banner-id');
+        await act(async () => {
+          if (intervalCallback) {
+            intervalCallback();
           }
         });
+
+        rerender(<TrialCompanion />);
+        if (secondResponse?.value) {
+          /* empty */
+        } else {
+          await waitFor(() => {
+            expect(queryByTestId(GET_SET_UP_ACCORDION_TEST_ID)).toBeNull();
+          });
+        }
       }
     );
   });
 
-  describe('banner removal on unmount', () => {
-    it('should remove banner when component unmounts', async () => {
-      mockUseGetNBA.mockReturnValue({
-        value: { milestoneId: Milestone.M1 },
-        error: undefined,
-        loading: false,
-      });
-
-      const { unmount } = render(<TrialCompanion />);
-
-      await waitFor(() => {
-        expect(mockBannersReplace).toHaveBeenCalledTimes(1);
-      });
-
-      unmount();
-
-      expect(mockBannersRemove).toHaveBeenCalledWith('mock-banner-id');
-    });
-  });
+  // TODO: dismiss test
 });

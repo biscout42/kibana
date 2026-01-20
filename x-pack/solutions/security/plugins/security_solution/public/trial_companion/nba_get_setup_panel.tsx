@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import type { Key } from 'react';
 import React, { useState } from 'react';
 import { difference } from 'lodash';
 import { css } from '@emotion/react';
@@ -29,8 +30,8 @@ import type { Milestone } from '../../common/trial_companion/types';
 import type { NBAAction, NBATODOItem } from './nba_translations';
 import RadioCircleIconSVG from './radio_circle_icon.svg';
 
-// TODO: rename this file
-// TODO: unit tests
+export const TEST_SUBJ_PREFIX = 'securitySolutionYourTrialCompanion';
+export const GET_SET_UP_ACCORDION_TEST_ID = `${TEST_SUBJ_PREFIX}-get-set-up-accordion`;
 
 export interface YourTrialCompanionProps {
   open: Milestone[];
@@ -43,6 +44,7 @@ export interface YourTrialCompanionTODOItemProps {
   completed: Milestone[];
   setExpandedItemId: (id: Milestone | null) => void;
   trigger: 'open' | 'closed';
+  key: Key;
 }
 
 function buttonContent(completed: number, total: number) {
@@ -66,12 +68,17 @@ function buttonContent(completed: number, total: number) {
   );
 }
 
-function itemButtonContent(iconType: string, color: string, title: string) {
+function itemButtonContent(iconType: string, color: string, title: string, milestoneId: Milestone) {
   return (
     <div>
       <EuiTitle size="xs" css={{ fontWeight: 'normal' }}>
         <div>
-          <EuiIcon type={iconType} size="m" color={color} />
+          <EuiIcon
+            type={iconType}
+            size="m"
+            color={color}
+            data-test-subj={`${TEST_SUBJ_PREFIX}-item-icon-${milestoneId}`}
+          />
           &nbsp;
           <FormattedMessage
             id="xpack.securitySolution.trialNotifications.yourTrialCompanion.item.title"
@@ -84,7 +91,7 @@ function itemButtonContent(iconType: string, color: string, title: string) {
   );
 }
 
-const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
+export const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
   item,
   completed,
   setExpandedItemId,
@@ -119,13 +126,15 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
       <EuiSpacer size="s" />
       <EuiAccordion
         id={accordionId}
-        buttonContent={itemButtonContent(iconType, color, item.translate.title)}
+        buttonContent={itemButtonContent(iconType, color, item.translate.title, item.milestoneId)}
         arrowDisplay="right"
         borders={trigger === 'open' ? 'horizontal' : 'none'}
         buttonProps={{ paddingSize: 's' }}
         paddingSize="s"
         onToggle={onToggle}
         forceState={trigger}
+        data-test-subj={`${TEST_SUBJ_PREFIX}-item-${item.milestoneId}`}
+        key={item.milestoneId}
       >
         <EuiSpacer size="s" />
         <FormattedMessage
@@ -136,12 +145,7 @@ const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProps> = ({
         {action && viewButtonText && (
           <>
             <EuiSpacer size="s" />
-            <EuiButton
-              size="s"
-              onClick={onViewButton}
-              fill={true}
-              data-test-subj="trial-companion-view-button"
-            >
+            <EuiButton size="s" onClick={onViewButton} fill={true}>
               <FormattedMessage
                 id="xpack.securitySolution.trialNotifications.trialNotification.viewButton"
                 defaultMessage="{viewButtonText}"
@@ -195,10 +199,12 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
           buttonContent={buttonContent(completed.length, todoItems.length)}
           arrowDisplay="right"
           paddingSize="s"
+          data-test-subj={GET_SET_UP_ACCORDION_TEST_ID}
         >
           {todoItems.map((item) => {
             return (
               <YourTrialCompanionTODOItem
+                key={item.milestoneId}
                 item={item}
                 completed={completed}
                 setExpandedItemId={setExpandedItemId}

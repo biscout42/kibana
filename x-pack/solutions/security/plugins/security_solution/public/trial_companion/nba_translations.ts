@@ -16,7 +16,7 @@ export interface NBAAction {
 export interface NBA {
   message: string;
   title: string;
-  apps: NBAAction[] | undefined; // TODO: for two apps - how-to pass text to the buttons?
+  apps: NBAAction[];
 }
 
 export interface NBATODOItem {
