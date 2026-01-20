@@ -17,7 +17,7 @@ import { NBA_SAVED_OBJECT_TYPE } from '../saved_objects';
 
 function toOpenTODOs(result: SavedObject<NBASavedObjectAttributes>): NBAToBeDone {
   return {
-    milestoneIds: result.attributes.openTODOs,
+    openTODOs: result.attributes.openTODOs,
     savedObjectId: result.id,
     dismiss: result.attributes.dismiss,
   } as NBAToBeDone;
@@ -56,14 +56,14 @@ export class TrialCompanionMilestoneRepositoryImpl implements TrialCompanionMile
       NBA_SAVED_OBJECT_TYPE,
       toBeDone.savedObjectId,
       {
-        openTODOs: toBeDone.milestoneIds,
+        openTODOs: toBeDone.openTODOs,
         dismiss: toBeDone.dismiss,
       }
     );
 
     this.logger.debug(
       `Saved open TODOs with id ${response.id} and ${
-        toBeDone.milestoneIds
+        toBeDone.openTODOs
       }. Response: ${JSON.stringify(response)}`
     );
   }

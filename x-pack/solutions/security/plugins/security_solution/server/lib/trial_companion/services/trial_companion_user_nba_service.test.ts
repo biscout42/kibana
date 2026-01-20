@@ -11,8 +11,9 @@ import { savedObjectsClientMock } from '@kbn/core-saved-objects-api-server-mocks
 import { TrialCompanionUserNBAServiceImpl } from './trial_companion_user_nba_service';
 import { loggingSystemMock } from '@kbn/core-logging-server-mocks';
 import { Milestone } from '../../../../common/trial_companion/types';
-import { NBA_SAVED_OBJECT_TYPE, NBA_USER_SEEN_SAVED_OBJECT_TYPE } from '../saved_objects';
+import { NBA_SAVED_OBJECT_TYPE } from '../saved_objects';
 
+// TODO: update
 const createSO = (attributes: unknown, type: string) => ({
   id: 'abc',
   attributes,

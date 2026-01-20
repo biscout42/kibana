@@ -23,6 +23,7 @@ jest.mock('./api', () => ({
   postNBAUserSeen: jest.fn(),
 }));
 
+// TODO: update
 // Mock useInterval to capture the callback
 let intervalCallback: (() => void) | null = null;
 jest.mock('react-use/lib/useInterval', () => {

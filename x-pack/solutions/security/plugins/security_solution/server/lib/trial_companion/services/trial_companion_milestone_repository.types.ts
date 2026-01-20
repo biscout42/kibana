@@ -9,7 +9,7 @@ import type { Milestone } from '../../../../common/trial_companion/types';
 
 export interface NBAToBeDone {
   savedObjectId: string;
-  milestoneIds: Milestone[];
+  openTODOs: Milestone[];
   dismiss?: boolean;
 }
 

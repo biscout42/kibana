@@ -30,6 +30,6 @@ export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBASe
   async openTODOs(): Promise<NBATODOList | undefined> {
     const result = await this.repo.getCurrent();
     if (!result) return undefined;
-    return { openTODOs: result.milestoneIds, dismiss: result.dismiss };
+    return { openTODOs: result.openTODOs, dismiss: result.dismiss };
   }
 }

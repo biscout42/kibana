@@ -43,7 +43,7 @@ import type { DetectorF } from '../types';
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
 const TASK_ID = `${TASK_TYPE}:1.0.0`;
-const INTERVAL = '30s';
+const INTERVAL = '1m';
 const TIMEOUT = '10m';
 
 export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneServiceDepsF = (
@@ -71,7 +71,7 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
       }
     : undefined;
 
-  // order doesn't matter anymore
+  // order doesn't matter
   detectors.push(installedPackagesM1(detectorsLogger, packageService));
   if (usageCollectorDeps) {
     detectors.push(
@@ -156,10 +156,10 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
         this.logger.debug('No previous TODOs found, creating it');
         updated = await this.getMilestoneRepository().create(openTODOs);
       } else if (
-        difference(openTODOs, saved.milestoneIds).length > 0 ||
-        difference(saved.milestoneIds, openTODOs).length > 0
+        difference(openTODOs, saved.openTODOs).length > 0 ||
+        difference(saved.openTODOs, openTODOs).length > 0
       ) {
-        saved.milestoneIds = openTODOs;
+        saved.openTODOs = openTODOs;
         await this.getMilestoneRepository().update(saved);
         updated = saved;
       }
