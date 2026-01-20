@@ -34,11 +34,14 @@ const defaultTimeout = 10000;
 const TrialCompanionImpl: React.FC<Props> = () => {
   const [count, setCount] = useState(0);
   const [previouslyLoaded, setPreviouslyLoaded] = useState<Milestone[] | undefined>(undefined);
-  const { value, error, loading } = useGetNBA([count]);
-  const openTODOs = value?.openTODOs; // no milestoneId means anything to show
+  const response = useGetNBA([count]);
+  const value = response?.value;
+  const openTODOs = value?.openTODOs;
+  const loading = response?.loading;
+  const dismiss = value?.dismiss;
 
   useInterval(() => {
-    if (error || loading || (value?.openTODOs && !value?.dismiss)) {
+    if (response?.error || loading || (openTODOs && !dismiss)) {
       setCount((c) => c + 1);
     }
   }, defaultTimeout);
@@ -59,7 +62,7 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     }
   }
 
-  if (!result || value?.dismiss) return null;
+  if (!result || dismiss) return null;
 
   return <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} onDismiss={onDismissButton} />;
 };

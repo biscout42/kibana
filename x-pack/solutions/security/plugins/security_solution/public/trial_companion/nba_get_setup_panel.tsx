@@ -32,6 +32,7 @@ import RadioCircleIconSVG from './radio_circle_icon.svg';
 
 export const TEST_SUBJ_PREFIX = 'securitySolutionYourTrialCompanion';
 export const GET_SET_UP_ACCORDION_TEST_ID = `${TEST_SUBJ_PREFIX}-get-set-up-accordion`;
+export const GET_SET_UP_DISMISS_BUTTON_TEST_ID = `${TEST_SUBJ_PREFIX}-get-set-up-dismiss-button`;
 
 export interface YourTrialCompanionProps {
   open: Milestone[];
@@ -235,7 +236,12 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
               <EuiHorizontalRule margin="xs" />
               <EuiFlexGroup alignItems={'center'} direction={'column'}>
                 <EuiFlexItem>
-                  <EuiButton fill={true} onClick={onDismissButton} color={'primary'}>
+                  <EuiButton
+                    fill={true}
+                    onClick={onDismissButton}
+                    color={'primary'}
+                    data-test-subj={GET_SET_UP_DISMISS_BUTTON_TEST_ID}
+                  >
                     <FormattedMessage
                       id="xpack.securitySolution.trialNotifications.yourTrialCompanion.dismiss"
                       defaultMessage="Dismiss"
