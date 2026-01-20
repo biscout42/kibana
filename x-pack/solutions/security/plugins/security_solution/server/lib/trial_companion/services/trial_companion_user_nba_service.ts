@@ -12,13 +12,22 @@ import { TrialCompanionMilestoneRepositoryImpl } from './trial_companion_milesto
 import type { TrialCompanionUserNBAService } from './trial_companion_user_nba_service.types';
 import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
 
+export const createTrialCompanionUserNBAService = (
+  logger: Logger,
+  soClient: SavedObjectsClientContract
+) => {
+  const aLogger = logger.get('trial_companion_user_nba_service');
+  const repo = new TrialCompanionMilestoneRepositoryImpl(aLogger, soClient);
+  return new TrialCompanionUserNBAServiceImpl(logger, repo);
+};
+
 export class TrialCompanionUserNBAServiceImpl implements TrialCompanionUserNBAService {
   private readonly logger: Logger;
   private readonly repo: TrialCompanionMilestoneRepository;
 
-  constructor(logger: Logger, soClient: SavedObjectsClientContract) {
-    this.logger = logger.get('trial_companion_user_nba_service');
-    this.repo = new TrialCompanionMilestoneRepositoryImpl(this.logger, soClient);
+  constructor(logger: Logger, repo: TrialCompanionMilestoneRepository) {
+    this.logger = logger;
+    this.repo = repo;
   }
   async dismiss(username: string): Promise<void> {
     this.logger.debug(`Dismiss called by user ${username}`);

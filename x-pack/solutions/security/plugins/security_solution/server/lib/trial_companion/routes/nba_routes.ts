@@ -21,7 +21,7 @@ import {
   TRIAL_COMPANION_NBA_URL,
 } from '../../../../common/trial_companion/constants';
 import type { SecuritySolutionRequestHandlerContext } from '../../../types';
-import { TrialCompanionUserNBAServiceImpl } from '../services/trial_companion_user_nba_service';
+import { createTrialCompanionUserNBAService } from '../services/trial_companion_user_nba_service';
 import type { TrialCompanionRoutesDeps } from '../types';
 
 interface NBAContext {
@@ -168,7 +168,7 @@ async function getNBAContext(
     return left(response.ok({}));
   }
 
-  const nbaService: TrialCompanionUserNBAService = new TrialCompanionUserNBAServiceImpl(
+  const nbaService: TrialCompanionUserNBAService = createTrialCompanionUserNBAService(
     logger,
     core.savedObjects.getClient()
   );
