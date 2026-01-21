@@ -106,7 +106,7 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
       expect(repo.update).not.toHaveBeenCalled();
       expect(repo.create).toHaveBeenCalledTimes(1);
       expect(mockDetectorUndefined).toHaveBeenCalledTimes(4);
-      expect(mockTelemetry.reportEvent).not.toHaveBeenCalled();
+      expect(mockTelemetry.reportEvent).toHaveBeenCalled();
     });
 
     it('does not run detectors if abort signal', async () => {
