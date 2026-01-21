@@ -105,7 +105,7 @@ export default function (providerContext: FtrProviderContext) {
       // Note: Asset Inventory uses the 'generic' entity type
       try {
         await supertest
-          .delete(`${spacePath}/api/entity_store/engines/generic?data=true`)
+          .delete(`${spacePath}/api/entity_store/engines/generic?delete_data=true`)
           .set('kbn-xsrf', 'xxxx')
           .expect(200);
         logger.debug(`Deleted entity store generic engine for space: ${spaceId || 'default'}`);
@@ -140,6 +140,25 @@ export default function (providerContext: FtrProviderContext) {
       await retry.waitFor('enrich policy to be created', async () => {
         try {
           await es.enrich.getPolicy({ name: getEnrichPolicyId(spaceId) });
+          return true;
+        } catch (e) {
+          return false;
+        }
+      });
+    },
+
+    /**
+     * Executes the enrich policy and waits for completion
+     * Uses retry logic in case the policy is not yet fully ready
+     */
+    executeEnrichPolicy: async (spaceId?: string) => {
+      const spaceIdentifier = spaceId || 'default';
+      await retry.waitFor(`enrich policy to be executed for ${spaceIdentifier} space`, async () => {
+        try {
+          await es.enrich.executePolicy({
+            name: getEnrichPolicyId(spaceId),
+            wait_for_completion: true,
+          });
           return true;
         } catch (e) {
           return false;
@@ -1021,6 +1040,191 @@ export default function (providerContext: FtrProviderContext) {
         });
       });
 
+      it('should return label nodes with correct ID pattern confirming boolean handling', async () => {
+        const response = await postGraph(supertest, {
+          query: {
+            indexPatterns: ['.alerts-security.alerts-*', 'logs-*'],
+            originEventIds: [
+              { id: 'kabcd1234efgh5678', isAlert: true },
+              { id: 'failed-event', isAlert: false },
+            ],
+            start: '2024-09-01T00:00:00Z',
+            end: '2024-09-02T00:00:00Z',
+          },
+        }).expect(result(200));
+
+        expect(response.body).to.have.property('nodes');
+
+        const labelNodes = response.body.nodes.filter(
+          (n: NodeDataModel) => n.shape === 'label'
+        ) as LabelNodeDataModel[];
+
+        // Verify we have label nodes to test
+        expect(labelNodes.length).to.be.greaterThan(0, 'Should have at least one label node');
+
+        // Verify label node IDs contain the expected pattern oe([01])oa([01])
+        // This confirms isOrigin and isOriginAlert booleans are converted to 0/1
+        // CRITICAL: If COALESCE(..., false) is missing, events with null event.id
+        // would result in isOrigin=null which would break this pattern
+        labelNodes.forEach((labelNode: LabelNodeDataModel) => {
+          expect(labelNode.id).to.match(
+            /oe\([01]\)oa\([01]\)/,
+            `Label node ID should contain oe(0|1)oa(0|1) pattern but got: ${labelNode.id}. ` +
+              'This pattern validates that isOrigin and isOriginAlert are properly coalesced to boolean values.'
+          );
+        });
+
+        // At least one label should be from an origin event (oe(1))
+        const originLabelNodes = labelNodes.filter((n: LabelNodeDataModel) =>
+          n.id.includes('oe(1)')
+        );
+        expect(originLabelNodes.length).to.be.greaterThan(
+          0,
+          'Should have at least one label node from origin event'
+        );
+
+        // Verify the origin alert label has the correct pattern (oe(1)oa(1))
+        const originAlertLabels = labelNodes.filter((n: LabelNodeDataModel) =>
+          n.id.includes('oe(1)oa(1)')
+        );
+        expect(originAlertLabels.length).to.be.greaterThan(
+          0,
+          'Should have at least one label node from origin alert (kabcd1234efgh5678 is marked as isAlert: true)'
+        );
+      });
+
+      it('should handle events with null event.id gracefully', async () => {
+        // Create a test event with null event.id to test the edge case
+        // Use logs-* pattern which is a data stream, requires op_type: 'create'
+        const testDataStream = 'logs-test.graph-default';
+
+        const createResponse = await es.index({
+          index: testDataStream,
+          op_type: 'create', // Required for data streams
+          document: {
+            '@timestamp': '2024-09-01T12:00:00.000Z',
+            'event.action': 'test_action_null_event_id',
+            // Deliberately omit event.id to test null handling
+            'user.entity.id': 'test-user-null-event-id',
+            'host.target.entity.id': 'test-target-null-event-id',
+          },
+          refresh: 'wait_for',
+        });
+
+        const createdDocId = createResponse._id;
+        const createdIndex = createResponse._index;
+
+        try {
+          // Verify the event was created without event.id
+          const verifyResponse = await es.search({
+            index: testDataStream,
+            query: {
+              bool: {
+                filter: [
+                  {
+                    term: {
+                      _id: createdDocId,
+                    },
+                  },
+                ],
+                must_not: [
+                  {
+                    exists: {
+                      field: 'event.id',
+                    },
+                  },
+                ],
+              },
+            },
+          });
+
+          expect(verifyResponse.hits.hits.length).to.be.greaterThan(
+            0,
+            'Test event with null event.id should exist'
+          );
+
+          // Query specifically for the event with null event.id using esQuery filter
+          // Also provide originEventIds to trigger the COALESCE logic for isOrigin/isOriginAlert
+          // This tests that events with null event.id get isOrigin=false (not null)
+          const response = await postGraph(supertest, {
+            query: {
+              indexPatterns: ['.alerts-security.alerts-*', 'logs-*'],
+              // Include originEventIds to test that isOrigin evaluates to false (not null)
+              // when event.id is null - the COALESCE(..., false) is critical here
+              originEventIds: [{ id: 'kabcd1234efgh5678', isAlert: true }],
+              start: '2024-09-01T00:00:00Z',
+              end: '2024-09-02T00:00:00Z',
+              esQuery: {
+                bool: {
+                  filter: [
+                    {
+                      match_phrase: {
+                        'user.entity.id': 'test-user-null-event-id',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          }).expect(result(200));
+
+          expect(response.body).to.have.property('nodes');
+          expect(response.body).to.have.property('edges');
+
+          // Should find the event with null event.id
+          expect(response.body.nodes.length).to.be.greaterThan(
+            0,
+            'Should return nodes for event with null event.id'
+          );
+
+          const labelNodes = response.body.nodes.filter(
+            (n: NodeDataModel) => n.shape === 'label'
+          ) as LabelNodeDataModel[];
+
+          // Verify we got at least one label node for the null event.id event
+          expect(labelNodes.length).to.be.greaterThan(
+            0,
+            'Should have label node for event with null event.id'
+          );
+
+          // All label nodes should have valid IDs with the pattern oe([01])oa([01])
+          // This confirms COALESCE ensures boolean isOrigin and isOriginAlert values
+          // even when event.id is null (should be oe(0)oa(0) for non-origin events)
+          labelNodes.forEach((labelNode: LabelNodeDataModel) => {
+            expect(labelNode.id).to.match(
+              /oe\([01]\)oa\([01]\)/,
+              `Label node ID should contain oe(0|1)oa(0|1) pattern but got: ${labelNode.id}. ` +
+                'If the pattern shows null instead of 0/1, the COALESCE fix is missing.'
+            );
+          });
+
+          // The event with null event.id should have isOrigin=false (oe(0)) since
+          // event.id IN (...) returns null when event.id is null, and COALESCE should
+          // convert that to false
+          const nullEventIdLabelNode = labelNodes.find((n: LabelNodeDataModel) =>
+            n.label?.includes('test_action_null_event_id')
+          );
+          expect(nullEventIdLabelNode).to.not.be(undefined);
+          expect(nullEventIdLabelNode!.id).to.match(
+            /oe\(0\)oa\(0\)/,
+            'Event with null event.id should have isOrigin=false (oe(0)) and isOriginAlert=false (oa(0))'
+          );
+        } finally {
+          // Clean up: delete the test event using the actual backing index
+          if (createdDocId && createdIndex) {
+            await es
+              .delete({
+                index: createdIndex,
+                id: createdDocId,
+                refresh: 'wait_for',
+              })
+              .catch(() => {
+                // Ignore errors if already deleted
+              });
+          }
+        }
+      });
+
       describe('Graph without data enrichment', () => {
         before(async () => {
           await kibanaServer.uiSettings.update({ 'securitySolution:enableAssetInventory': true });
@@ -1090,21 +1294,6 @@ export default function (providerContext: FtrProviderContext) {
             { space: customNamespaceId }
           );
 
-          // Load fresh entity data
-          await esArchiver.load(
-            'x-pack/solutions/security/test/cloud_security_posture_api/es_archives/entity_store'
-          );
-
-          // Wait for entity data to be indexed before proceeding
-          // This ensures the enrich policy will have data when it executes
-          await retry.waitFor('entity data to be indexed', async () => {
-            const response = await es.count({
-              index: entitiesIndex,
-            });
-            // 8 entities in default space (3 original + 5 for multi-target test) + 4 in test space = 12 total
-            return response.count === 12;
-          });
-
           // initialize security-solution-default data-view
           dataView = dataViewRouteHelpersFactory(supertest);
           await dataView.create('security-solution');
@@ -1121,9 +1310,32 @@ export default function (providerContext: FtrProviderContext) {
           await entityStoreHelpers.waitForEnrichPolicyCreated();
           await entityStoreHelpers.waitForEnrichPolicyCreated(customNamespaceId);
 
+          // Load fresh entity data
+          await esArchiver.load(
+            'x-pack/solutions/security/test/cloud_security_posture_api/es_archives/entity_store'
+          );
+
+          // Wait for entity data to be indexed before proceeding
+          // This ensures the enrich policy will have data when it executes
+          await retry.waitFor('entity data to be indexed', async () => {
+            const response = await es.count({
+              index: entitiesIndex,
+            });
+            // 8 entities in default space (3 original + 5 for multi-target test) + 4 in test space = 12 total
+            return response.count === 12;
+          });
+
+          // Explicitly execute enrich policies to ensure they have the latest entity data
+          // This is needed because the policy execution during enableAssetInventory might
+          // not have all entity data indexed yet due to async indexing
+          await entityStoreHelpers.executeEnrichPolicy();
+          await entityStoreHelpers.executeEnrichPolicy(customNamespaceId);
+
           // Wait for enrich indexes to be created AND populated with data
           await entityStoreHelpers.waitForEnrichIndexPopulated();
           await entityStoreHelpers.waitForEnrichIndexPopulated(customNamespaceId);
+
+          await entityStoreHelpers.installCloudAssetInventoryPackage();
         });
 
         after(async () => {
@@ -1151,10 +1363,6 @@ export default function (providerContext: FtrProviderContext) {
         });
 
         it('should contain entity data when asset inventory is enabled', async () => {
-          // although enrich policy is already create via 'api/asset_inventory/enable'
-          // we still would like to replicate as if cloud asset discovery integration was fully installed
-          await entityStoreHelpers.installCloudAssetInventoryPackage();
-
           // Looks like there's some async operation that runs in the background
           // so we use retry.tryForTime to wait for it to finish - otherwise sometimes policy is not yet created
           await retry.tryForTime(enrichPolicyCreationTimeout, async () => {
@@ -1240,8 +1448,6 @@ export default function (providerContext: FtrProviderContext) {
         });
 
         it('should return enriched data when asset inventory is enabled in a different space - multi target', async () => {
-          await entityStoreHelpers.installCloudAssetInventoryPackage(customNamespaceId);
-
           await retry.tryForTime(enrichPolicyCreationTimeout, async () => {
             const response = await postGraph(
               supertest,
@@ -1331,8 +1537,6 @@ export default function (providerContext: FtrProviderContext) {
         });
 
         it('should enrich graph with entity metadata for actor acting on single target', async () => {
-          await entityStoreHelpers.installCloudAssetInventoryPackage();
-
           await retry.tryForTime(enrichPolicyCreationTimeout, async () => {
             const response = await postGraph(supertest, {
               query: {
@@ -1423,8 +1627,6 @@ export default function (providerContext: FtrProviderContext) {
         });
 
         it('should enrich graph with multiple targets from different fields with mixed grouping', async () => {
-          await entityStoreHelpers.installCloudAssetInventoryPackage();
-
           await retry.tryForTime(enrichPolicyCreationTimeout, async () => {
             const response = await postGraph(supertest, {
               query: {

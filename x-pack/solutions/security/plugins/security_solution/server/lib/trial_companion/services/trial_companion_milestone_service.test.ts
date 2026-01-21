@@ -14,7 +14,7 @@ import { Milestone } from '../../../../common/trial_companion/types';
 import { coreMock } from '@kbn/core/server/mocks';
 import type { AnalyticsServiceSetup } from '@kbn/core-analytics-browser';
 import {
-  TRIAL_COMPANION_DEPLOYMENT_MILESTONE,
+  TRIAL_COMPANION_DEPLOYMENT_STATE,
   TRIAL_COMPANION_MILESTONE_REFRESH_ERROR,
 } from '../telemetry/trial_companion_ebt_events';
 
@@ -90,7 +90,7 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
       });
     });
 
-    it('runs detectors - does not store result if no milestone', async () => {
+    it('runs detectors - store result if all done', async () => {
       const mockDetectorUndefined = jest.fn(() => Promise.resolve(undefined));
       await sut.start({
         taskManager: taskManagerStart,
@@ -104,12 +104,12 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
       });
       await sut.refreshMilestones(abortController.signal);
       expect(repo.update).not.toHaveBeenCalled();
-      expect(repo.create).not.toHaveBeenCalled();
+      expect(repo.create).toHaveBeenCalledTimes(1);
       expect(mockDetectorUndefined).toHaveBeenCalledTimes(4);
       expect(mockTelemetry.reportEvent).not.toHaveBeenCalled();
     });
 
-    it('does not runs detectors if abort signal', async () => {
+    it('does not run detectors if abort signal', async () => {
       const mockDetectorUndefined = jest.fn(() => Promise.resolve(undefined));
       await sut.start({
         taskManager: taskManagerStart,
@@ -124,7 +124,7 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
       expect(mockTelemetry.reportEvent).not.toHaveBeenCalled();
     });
 
-    it('no detectors - nothing to do', async () => {
+    it('no detectors - all done', async () => {
       await sut.start({
         taskManager: taskManagerStart,
         detectors: [],
@@ -132,11 +132,11 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
       });
       await sut.refreshMilestones(abortController.signal);
       expect(repo.update).not.toHaveBeenCalled();
-      expect(repo.create).not.toHaveBeenCalled();
-      expect(mockTelemetry.reportEvent).not.toHaveBeenCalled();
+      expect(repo.create).toHaveBeenCalledTimes(1);
+      expect(mockTelemetry.reportEvent).toHaveBeenCalled();
     });
 
-    it('runs detectors - first detector wins and creates milestone', async () => {
+    it('runs detectors - runs all detectors', async () => {
       const mockDetectorUndefined = jest.fn(() => Promise.resolve(undefined));
       const mockDetectorM1 = jest.fn(() => Promise.resolve(Milestone.M1));
       const mockDetectorM2 = jest.fn(() => Promise.resolve(Milestone.M2));
@@ -147,15 +147,15 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
         repo,
       });
       await sut.refreshMilestones(abortController.signal);
-      expect(mockDetectorUndefined).toHaveBeenCalledTimes(1);
+      expect(mockDetectorUndefined).toHaveBeenCalledTimes(2);
       expect(mockDetectorM1).toHaveBeenCalledTimes(1);
-      expect(mockDetectorM2).not.toHaveBeenCalled();
-      expect(repo.create).toHaveBeenCalledWith(Milestone.M1);
+      expect(mockDetectorM2).toHaveBeenCalledTimes(1);
+      expect(repo.create).toHaveBeenCalledWith([Milestone.M1, Milestone.M2]);
       expect(repo.update).not.toHaveBeenCalled();
       expect(mockTelemetry.reportEvent).toHaveBeenCalledWith(
-        TRIAL_COMPANION_DEPLOYMENT_MILESTONE.eventType,
+        TRIAL_COMPANION_DEPLOYMENT_STATE.eventType,
         {
-          milestoneId: Milestone.M1,
+          openTODOs: [Milestone.M1, Milestone.M2],
         }
       );
     });
@@ -163,7 +163,7 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
     it('runs detectors - update existing milestone', async () => {
       const mockDetectorUndefined = jest.fn(() => Promise.resolve(undefined));
       const mockDetectorM2 = jest.fn(() => Promise.resolve(Milestone.M2));
-      repo.getCurrent.mockResolvedValueOnce({ milestoneId: Milestone.M1, savedObjectId: 'abc' });
+      repo.getCurrent.mockResolvedValueOnce({ openTODOs: [Milestone.M1], savedObjectId: 'abc' });
       await sut.start({
         taskManager: taskManagerStart,
         detectors: [
@@ -171,39 +171,45 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
           mockDetectorUndefined,
           mockDetectorM2,
           mockDetectorUndefined,
-        ],
-        repo,
-      });
-      await sut.refreshMilestones(abortController.signal);
-      expect(mockDetectorUndefined).toHaveBeenCalledTimes(2);
-      expect(mockDetectorM2).toHaveBeenCalled();
-      expect(repo.create).not.toHaveBeenCalled();
-      expect(repo.update).toHaveBeenCalledWith({ milestoneId: Milestone.M2, savedObjectId: 'abc' });
-      expect(mockTelemetry.reportEvent).toHaveBeenCalledWith(
-        TRIAL_COMPANION_DEPLOYMENT_MILESTONE.eventType,
-        {
-          milestoneId: Milestone.M2,
-        }
-      );
-    });
-
-    it('runs detectors - does not update the same milestone', async () => {
-      const mockDetectorUndefined = jest.fn(() => Promise.resolve(undefined));
-      const mockDetectorM2 = jest.fn(() => Promise.resolve(Milestone.M2));
-      repo.getCurrent.mockResolvedValueOnce({ milestoneId: Milestone.M2, savedObjectId: 'abc' });
-      await sut.start({
-        taskManager: taskManagerStart,
-        detectors: [
-          mockDetectorUndefined,
-          mockDetectorUndefined,
-          mockDetectorUndefined,
-          mockDetectorM2,
         ],
         repo,
       });
       await sut.refreshMilestones(abortController.signal);
       expect(mockDetectorUndefined).toHaveBeenCalledTimes(3);
       expect(mockDetectorM2).toHaveBeenCalled();
+      expect(repo.create).not.toHaveBeenCalled();
+      expect(repo.update).toHaveBeenCalledWith({ openTODOs: [Milestone.M2], savedObjectId: 'abc' });
+      expect(mockTelemetry.reportEvent).toHaveBeenCalledWith(
+        TRIAL_COMPANION_DEPLOYMENT_STATE.eventType,
+        {
+          openTODOs: [Milestone.M2],
+        }
+      );
+    });
+
+    it('runs detectors - does not update the same TODO list', async () => {
+      const mockDetectorUndefined = jest.fn(() => Promise.resolve(undefined));
+      const mockDetectorM2 = jest.fn(() => Promise.resolve(Milestone.M2));
+      const mockDetectorM3 = jest.fn(() => Promise.resolve(Milestone.M3));
+      repo.getCurrent.mockResolvedValueOnce({
+        openTODOs: [Milestone.M2, Milestone.M3],
+        savedObjectId: 'abc',
+      });
+      await sut.start({
+        taskManager: taskManagerStart,
+        detectors: [
+          mockDetectorUndefined,
+          mockDetectorUndefined,
+          mockDetectorUndefined,
+          mockDetectorM2,
+          mockDetectorM3,
+        ],
+        repo,
+      });
+      await sut.refreshMilestones(abortController.signal);
+      expect(mockDetectorUndefined).toHaveBeenCalledTimes(3);
+      expect(mockDetectorM2).toHaveBeenCalled();
+      expect(mockDetectorM3).toHaveBeenCalled();
       expect(repo.create).not.toHaveBeenCalled();
       expect(repo.update).not.toHaveBeenCalled();
     });
@@ -228,7 +234,7 @@ describe('TrialCompanionMilestoneServiceImpl', () => {
 
     it('does not propagate an error from repo.update', async () => {
       const mockDetectorM2 = jest.fn(() => Promise.resolve(Milestone.M2));
-      repo.getCurrent.mockResolvedValueOnce({ milestoneId: Milestone.M1, savedObjectId: 'abc' });
+      repo.getCurrent.mockResolvedValueOnce({ openTODOs: [Milestone.M1], savedObjectId: 'abc' });
       repo.update.mockRejectedValueOnce(new Error('test error'));
       await sut.start({
         taskManager: taskManagerStart,

@@ -321,6 +321,8 @@ export const getEditorOverwrites = (theme: UseEuiTheme<{}>) => {
     .suggest-details-container {
       border-radius: ${theme.euiTheme.border.radius.medium};
       ${euiShadow(theme, 'l')}
+      // Suggestions must be rendered above flyouts
+      z-index: 1100 !important;
     }
 
     .suggest-details-container {
@@ -342,14 +344,6 @@ export const getEditorOverwrites = (theme: UseEuiTheme<{}>) => {
       white-space: normal !important;
     }
 
-    // Modifies the height of the signature popup to make it fit under the page header.
-    // This is temprary until https://github.com/elastic/kibana/issues/245694 is resolved.
-    // This solution is succeptible to errors if the editor height or the page header height changes.
-    .parameter-hints-widget > .phwrapper {
-      max-height: 90px !important;
-      overflow: auto;
-    }
-
     .suggest-details .rendered-markdown h1 {
       display: block;
       margin-top: ${theme.euiTheme.size.m};
@@ -365,6 +359,28 @@ export const getEditorOverwrites = (theme: UseEuiTheme<{}>) => {
 
 export const filterDataErrors = (errors: (MonacoMessage & { code: string })[]): MonacoMessage[] => {
   return errors.filter((error) => {
-    return !['unknownIndex', 'unknownColumn'].includes(error.code);
+    return !['unknownIndex', 'unknownColumn', 'unmappedColumnWarning'].includes(error.code);
   });
+};
+
+/**
+ * Filters warning messages that overlap with error messages ranges.
+ */
+export const filterOutWarningsOverlappingWithErrors = (
+  errors: MonacoMessage[],
+  warnings: MonacoMessage[]
+): MonacoMessage[] => {
+  const hasOverlap = (warning: MonacoMessage) => {
+    return errors.some((error) => {
+      const isOverlappingLine =
+        warning.startLineNumber <= error.endLineNumber &&
+        warning.endLineNumber >= error.startLineNumber;
+      const isOverlappingColumn =
+        warning.startColumn <= error.endColumn && warning.endColumn >= error.startColumn;
+
+      return isOverlappingLine && isOverlappingColumn;
+    });
+  };
+
+  return warnings.filter((warning) => !hasOverlap(warning));
 };

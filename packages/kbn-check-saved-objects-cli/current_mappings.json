@@ -3442,7 +3442,25 @@
   "security-rule": {
     "dynamic": false,
     "properties": {
+      "name": {
+        "fields": {
+          "keyword": {
+            "normalizer": "lowercase",
+            "type": "keyword"
+          }
+        },
+        "type": "text"
+      },
+      "risk_score": {
+        "type": "float"
+      },
       "rule_id": {
+        "type": "keyword"
+      },
+      "severity": {
+        "type": "keyword"
+      },
+      "tags": {
         "type": "keyword"
       },
       "version": {
@@ -4298,18 +4316,11 @@
   },
   "trial-companion-nba-milestone": {
     "properties": {
-      "milestoneId": {
-        "type": "integer"
-      }
-    }
-  },
-  "trial-companion-nba-milestone-user-seen": {
-    "properties": {
-      "milestoneIds": {
-        "type": "integer"
+      "dismiss": {
+        "type": "boolean"
       },
-      "userId": {
-        "type": "text"
+      "openTODOs": {
+        "type": "integer"
       }
     }
   },

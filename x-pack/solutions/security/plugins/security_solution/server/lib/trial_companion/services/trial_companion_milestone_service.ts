@@ -21,8 +21,9 @@ import type {
   UsageCollectionSetup,
 } from '@kbn/usage-collection-plugin/server';
 import type { PackageService } from '@kbn/fleet-plugin/server';
+import { difference } from 'lodash';
 import {
-  TRIAL_COMPANION_DEPLOYMENT_MILESTONE,
+  TRIAL_COMPANION_DEPLOYMENT_STATE,
   TRIAL_COMPANION_MILESTONE_REFRESH_ERROR,
 } from '../telemetry/trial_companion_ebt_events';
 import type { UsageCollectorDeps } from './trial_companion_nba_detectors';
@@ -30,6 +31,7 @@ import {
   savedDiscoverySessionsM2,
   detectionRulesInstalledM3,
   installedPackagesM1,
+  aiFeaturesM5,
   casesM6,
 } from './trial_companion_nba_detectors';
 import { TrialCompanionMilestoneRepositoryImpl } from './trial_companion_milestone_repository';
@@ -40,9 +42,12 @@ import type {
   TrialCompanionMilestoneServiceStart,
 } from './trial_companion_milestone_service.types';
 import { newTelemetryLogger } from '../../telemetry/helpers';
-import { Milestone } from '../../../../common/trial_companion/types';
-import type { TrialCompanionMilestoneRepository } from './trial_companion_milestone_repository.types';
-import type { NBAMilestone, DetectorF } from '../types';
+import type { Milestone } from '../../../../common/trial_companion/types';
+import type {
+  TrialCompanionMilestoneRepository,
+  NBAToBeDone,
+} from './trial_companion_milestone_repository.types';
+import type { DetectorF } from '../types';
 
 const TASK_TYPE = 'security:trial-companion-milestone';
 const TASK_TITLE = 'This task periodically checks currently achieved milestones.';
@@ -59,12 +64,14 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
   usageCollection?: UsageCollectionSetup
 ) => {
   const soClient = savedObjects.getUnsafeInternalClient();
+  const detectorsLogger = logger.get('trial-companion-milestone-detectors');
 
+  // the list of detectors should have minimum all milestones from NBA_TODO_LIST at x-pack/solutions/security/plugins/security_solution/public/trial_companion/nba_translations.ts:131
   const detectors: DetectorF[] = [];
 
   const usageCollectorDeps: UsageCollectorDeps | undefined = usageCollection
     ? {
-        logger,
+        logger: detectorsLogger,
         collectorContext: {
           esClient,
           soClient,
@@ -73,19 +80,16 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
       }
     : undefined;
 
-  // order matters
-  detectors.push(installedPackagesM1(logger, packageService));
+  // order doesn't matter
+  detectors.push(installedPackagesM1(detectorsLogger, packageService));
   if (usageCollectorDeps) {
     detectors.push(
       savedDiscoverySessionsM2(usageCollectorDeps),
       detectionRulesInstalledM3(usageCollectorDeps),
+      aiFeaturesM5(esClient),
       casesM6(usageCollectorDeps)
     );
   }
-
-  detectors.push(async () => {
-    return Milestone._FINAL;
-  });
 
   const repo: TrialCompanionMilestoneRepository = new TrialCompanionMilestoneRepositoryImpl(
     logger,
@@ -148,9 +152,7 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
       const saved = await this.getMilestoneRepository().getCurrent();
       this.logger.debug(() => `Current milestone from SO: ${JSON.stringify(saved)}`);
 
-      let currentMilestoneId: Milestone | undefined;
-      // potential optimization: stop checking once we reach the final milestone, we could check SO in start function
-      // potential optimization: run only detectors for milestones higher than the current one
+      const openTODOs: Milestone[] = [];
       for (const d of this.detectors) {
         if (abortSignal.aborted) {
           this.logger.info('Abort signal received, stopping milestone detection');
@@ -159,29 +161,29 @@ export class TrialCompanionMilestoneServiceImpl implements TrialCompanionMilesto
 
         const milestoneId = await d();
         if (milestoneId) {
-          currentMilestoneId = milestoneId;
-          break;
+          openTODOs.push(milestoneId);
         }
       }
 
-      this.logger.debug(`Current milestone detected: ${currentMilestoneId}`);
+      this.logger.debug(`Current open TODOs detected: ${openTODOs}`);
 
-      let updated: NBAMilestone | undefined;
-      if (currentMilestoneId) {
-        if (!saved) {
-          this.logger.debug('No previous milestone found, creating it');
-          updated = await this.getMilestoneRepository().create(currentMilestoneId);
-          this.getTelemetry().reportEvent(TRIAL_COMPANION_DEPLOYMENT_MILESTONE.eventType, {
-            milestoneId: currentMilestoneId,
-          });
-        } else if (saved.milestoneId !== currentMilestoneId) {
-          saved.milestoneId = currentMilestoneId;
-          await this.getMilestoneRepository().update(saved);
-          updated = saved;
-          this.getTelemetry().reportEvent(TRIAL_COMPANION_DEPLOYMENT_MILESTONE.eventType, {
-            milestoneId: currentMilestoneId,
-          });
-        }
+      let updated: NBAToBeDone | undefined;
+      if (!saved) {
+        this.logger.debug('No previous TODOs found, creating it');
+        updated = await this.getMilestoneRepository().create(openTODOs);
+        this.getTelemetry().reportEvent(TRIAL_COMPANION_DEPLOYMENT_STATE.eventType, {
+          openTODOs,
+        });
+      } else if (
+        difference(openTODOs, saved.openTODOs).length > 0 ||
+        difference(saved.openTODOs, openTODOs).length > 0
+      ) {
+        saved.openTODOs = openTODOs;
+        await this.getMilestoneRepository().update(saved);
+        this.getTelemetry().reportEvent(TRIAL_COMPANION_DEPLOYMENT_STATE.eventType, {
+          openTODOs,
+        });
+        updated = saved;
       }
       this.logger.debug(() => `Current milestone updated: ${JSON.stringify(updated)}`);
     } catch (e) {
