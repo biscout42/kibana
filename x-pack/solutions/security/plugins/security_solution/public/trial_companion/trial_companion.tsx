@@ -9,7 +9,6 @@ import useInterval from 'react-use/lib/useInterval';
 
 import React, { useState } from 'react';
 import { difference } from 'lodash';
-import { postNBADismiss } from './api';
 import { YourTrialCompanion } from './nba_get_setup_panel';
 import { useKibana } from '../common/lib/kibana';
 import { useGetNBA } from './hooks/use_get_nba';
@@ -46,10 +45,6 @@ const TrialCompanionImpl: React.FC<Props> = () => {
     }
   }, defaultTimeout);
 
-  const onDismissButton = () => {
-    postNBADismiss();
-  };
-
   let result = previouslyLoaded;
   if (!loading && openTODOs) {
     result = openTODOs;
@@ -64,5 +59,5 @@ const TrialCompanionImpl: React.FC<Props> = () => {
 
   if (!result || dismiss) return null;
 
-  return <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} onDismiss={onDismissButton} />;
+  return <YourTrialCompanion open={result} todoItems={NBA_TODO_LIST} />;
 };

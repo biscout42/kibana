@@ -21,4 +21,12 @@ export const TrialCompanionViewButtonClickedEvent: TrialCompanionTelemetryEvent 
   },
 };
 
-export const trialCompanionTelemetryEvents = [TrialCompanionViewButtonClickedEvent];
+export const TrialCompanionDismissButtonClickedEvent: TrialCompanionTelemetryEvent = {
+  eventType: TrialCompanionEventTypes.DismissButtonClicked,
+  schema: {},
+};
+
+export const trialCompanionTelemetryEvents = [
+  TrialCompanionViewButtonClickedEvent,
+  TrialCompanionDismissButtonClickedEvent,
+];

@@ -8,7 +8,8 @@
 import type { RootSchema } from '@kbn/core/public';
 
 export enum TrialCompanionEventTypes {
-  ViewButtonClicked = 'NBA View Button Clicked',
+  ViewButtonClicked = 'TC View Button Clicked',
+  DismissButtonClicked = 'TC Dismiss Button Clicked',
 }
 
 interface TrialCompanionViewButtonClickedParams {
@@ -17,6 +18,7 @@ interface TrialCompanionViewButtonClickedParams {
 
 export interface TrialCompanionTelemetryEventsMap {
   [TrialCompanionEventTypes.ViewButtonClicked]: TrialCompanionViewButtonClickedParams;
+  [TrialCompanionEventTypes.DismissButtonClicked]: {};
 }
 
 export interface TrialCompanionTelemetryEvent {

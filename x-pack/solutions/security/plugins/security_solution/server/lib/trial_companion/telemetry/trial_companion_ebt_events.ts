@@ -6,29 +6,17 @@
  */
 import type { EventTypeOpts } from '@kbn/core/server';
 
-export const TRIAL_COMPANION_DEPLOYMENT_MILESTONE: EventTypeOpts<{ milestoneId: number }> = {
+export const TRIAL_COMPANION_DEPLOYMENT_STATE: EventTypeOpts<{ openTODOs: number[] }> = {
   eventType: 'trial_companion_deployment_milestone',
   schema: {
-    milestoneId: {
-      type: 'long',
-      _meta: {
-        description: 'Trial Companion deployment milestone aka NBA',
-      },
-    },
-  },
-};
-
-export const TRIAL_COMPANION_USER_SEEN_MILESTONE: EventTypeOpts<{ milestoneIds: number[] }> = {
-  eventType: 'trial_companion_user_seen_milestone',
-  schema: {
-    milestoneIds: {
+    openTODOs: {
       type: 'array',
       items: {
         type: 'long',
-        _meta: { description: '' },
+        _meta: { description: 'Milestone IDs' },
       },
       _meta: {
-        description: 'Milestone IDs dismissed by user',
+        description: 'Trial Companion deployment open TODOs aka NBAs',
       },
     },
   },
@@ -47,7 +35,6 @@ export const TRIAL_COMPANION_MILESTONE_REFRESH_ERROR: EventTypeOpts<{ message: s
 };
 
 export const TRIAL_COMPANION_EVENTS = [
-  TRIAL_COMPANION_DEPLOYMENT_MILESTONE,
-  TRIAL_COMPANION_USER_SEEN_MILESTONE,
+  TRIAL_COMPANION_DEPLOYMENT_STATE,
   TRIAL_COMPANION_MILESTONE_REFRESH_ERROR,
 ];
