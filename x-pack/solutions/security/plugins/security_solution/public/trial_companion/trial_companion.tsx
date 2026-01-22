@@ -20,9 +20,9 @@ import type { Milestone } from '../../common/trial_companion/types';
 interface Props {}
 
 export const TrialCompanion: React.FC<Props> = () => {
-  const { ...startServices } = useKibana().services;
+  const { cloud } = useKibana().services;
   const trialCompanionEnabled = useIsExperimentalFeatureEnabled('trialCompanionEnabled');
-  if (!startServices.cloud?.isInTrial() || !trialCompanionEnabled) {
+  if (!cloud?.isInTrial() || !trialCompanionEnabled) {
     return null;
   }
   return <TrialCompanionImpl />;

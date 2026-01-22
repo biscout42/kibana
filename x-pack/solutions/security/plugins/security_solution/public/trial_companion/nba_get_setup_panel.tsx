@@ -99,7 +99,7 @@ export const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProp
   setExpandedItemId,
   trigger,
 }) => {
-  const { ...startServices } = useKibana().services;
+  const { analytics, application } = useKibana().services;
   const iconType = completed.includes(item.milestoneId)
     ? 'checkInCircleFilled'
     : RadioCircleIconSVG;
@@ -112,10 +112,10 @@ export const YourTrialCompanionTODOItem: React.FC<YourTrialCompanionTODOItemProp
   const viewButtonText = action?.text;
   const onViewButton = () => {
     if (action) {
-      startServices.analytics?.reportEvent(TrialCompanionEventTypes.ViewButtonClicked, {
+      analytics?.reportEvent(TrialCompanionEventTypes.ViewButtonClicked, {
         app: action.app,
       });
-      startServices.application.navigateToApp(action.app);
+      application.navigateToApp(action.app);
     }
   };
   const onToggle = (isOpen: boolean) => {
@@ -174,7 +174,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   open,
   todoItems,
 }: YourTrialCompanionProps) => {
-  const { ...startServices } = useKibana().services;
+  const { analytics } = useKibana().services;
   const accordionId = useGeneratedHtmlId({ prefix: 'yourTrialCompanionAccordion' });
   const { euiTheme } = useEuiTheme();
   const completed = completedTODOs(todoItems, open);
@@ -193,7 +193,7 @@ export const YourTrialCompanion: React.FC<YourTrialCompanionProps> = ({
   const [isVisible, setIsVisible] = useState(true);
   const onDismissButton = () => {
     setIsVisible(false);
-    startServices.analytics?.reportEvent(TrialCompanionEventTypes.DismissButtonClicked, {});
+    analytics?.reportEvent(TrialCompanionEventTypes.DismissButtonClicked, {});
     postNBADismiss();
   };
 
