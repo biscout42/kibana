@@ -120,7 +120,7 @@ export const savedDiscoverySessionsM2 = (deps: UsageCollectorDeps): DetectorF =>
   };
 };
 
-export const aiFeaturesM5 = (esClient: ElasticsearchClient): DetectorF => {
+export const aiFeaturesM5 = (esClient: ElasticsearchClient, logger: Logger): DetectorF => {
   return async (): Promise<Milestone | undefined> => {
     const attackDiscoveryResponse = await esClient.count({
       index: '.alerts-security.attack.discovery.alerts-*',
@@ -132,6 +132,7 @@ export const aiFeaturesM5 = (esClient: ElasticsearchClient): DetectorF => {
         },
       },
     });
+    logger.debug(`attackDiscoveryResponse: ${JSON.stringify(attackDiscoveryResponse)}`);
     if (attackDiscoveryResponse.count > 0) {
       return undefined;
     }
@@ -145,7 +146,22 @@ export const aiFeaturesM5 = (esClient: ElasticsearchClient): DetectorF => {
         },
       },
     });
+    logger.debug(`aiAssistantResponse: ${JSON.stringify(aiAssistantResponse)}`);
     if (aiAssistantResponse.count > 0) {
+      return undefined;
+    }
+    const aiChatsResponse = await esClient.count({
+      index: '.chat-conversations*',
+      query: {
+        range: {
+          updated_at: {
+            gte: 'now-14d',
+          },
+        },
+      },
+    });
+    logger.debug(`aiChatsResponse: ${JSON.stringify(aiChatsResponse)}`);
+    if (aiChatsResponse.count > 0) {
       return undefined;
     }
     return Milestone.M5;

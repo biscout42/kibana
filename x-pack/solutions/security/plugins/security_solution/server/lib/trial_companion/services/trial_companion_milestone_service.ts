@@ -77,7 +77,7 @@ export const createTrialCompanionMilestoneServiceDeps: TrialCompanionMilestoneSe
     detectors.push(
       savedDiscoverySessionsM2(usageCollectorDeps),
       detectionRulesInstalledM3(usageCollectorDeps),
-      aiFeaturesM5(esClient),
+      aiFeaturesM5(esClient, detectorsLogger),
       casesM6(usageCollectorDeps)
     );
   }
